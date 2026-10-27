@@ -35,7 +35,7 @@ The operator reports Proxmox installed on the Dell (i5-12500T, 32 GB RAM, 512 GB
 | --- | --- |
 | Proxmox version, trusted CA or independently verified host key, actual node/bridge/storage IDs | Identify the host and avoid altering the wrong resource |
 | Available VM/template IDs, Ubuntu image checksum, SSH public key, guest DHCP reservation | Prepare a specific clone plan without collisions or invented values |
-| QNAP QTS version, existing shares, free space, dedicated export paths and numeric ownership | The supplied address was probed; NFS refused connections. Verify exports and preserve Plex/storage |
+| QNAP QTS version, existing shares, free space, dedicated export paths and numeric ownership | Version reported by the operator and recorded locally; authenticated verification, exact free space and the Plex share remain pending. A supplied screenshot shows a ready pool and thick volume, with capacities recorded locally. NFS refused connections; verify exports and preserve Plex/storage |
 | Tailnet administrators, intended private service identities and current policy | Confirm access boundaries without changing the existing tailnet |
 | Reviewed CLI versions and provider login choices | Reproducible Codex/OpenCode installs and controlled costs |
 | Hermes provider/model, spend ceiling, Telegram identity and permitted tools | Configure the installed dormant assistant without granting broad tools or unbounded spend |

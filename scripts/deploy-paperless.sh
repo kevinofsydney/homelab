@@ -5,11 +5,15 @@ repo="$(cd "$(dirname "$0")/.." && pwd)"
 dir="$repo/compose/paperless"
 envfile="$dir/.env"
 test -f "$envfile" || { echo "Missing $envfile" >&2; exit 2; }
-if grep -q REPLACE "$envfile"; then echo 'Replace all .env placeholders' >&2; exit 2; fi
 while IFS='=' read -r key value || [[ -n "$key" ]]; do
   value="${value%$'\r'}"
   [[ -z "$key" || "$key" == \#* ]] && continue
   [[ "$key" =~ ^[A-Z][A-Z0-9_]*$ ]] || { echo "Invalid .env key: $key" >&2; exit 2; }
+  # Backups are optional for deployment; the separate backup command validates
+  # its own destination before writing. All application values remain required.
+  if [[ "$key" != PAPERLESS_BACKUP_MOUNT && "$key" != PAPERLESS_BACKUP_SOURCE && "$value" == *REPLACE* ]]; then
+    echo "Replace the .env placeholder for $key" >&2; exit 2
+  fi
   export "$key=$value"
 done < "$envfile"
 "$repo/scripts/check-mount.sh" "$PAPERLESS_NAS_ROOT" "${PAPERLESS_NAS_SOURCE:?Set expected NFS source}"

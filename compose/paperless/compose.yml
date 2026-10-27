@@ -55,7 +55,7 @@ services:
       PAPERLESS_OCR_LANGUAGE: ${PAPERLESS_OCR_LANGUAGE:-eng}
       USERMAP_UID: ${PAPERLESS_UID:?Set verified NAS service UID}
       USERMAP_GID: ${PAPERLESS_GID:?Set verified NAS service GID}
-      PAPERLESS_CONSUMER_POLLING: "30"
+      PAPERLESS_CONSUMER_POLLING_INTERVAL: "30"
     volumes:
       - type: bind
         source: ${PAPERLESS_LOCAL_ROOT}/data

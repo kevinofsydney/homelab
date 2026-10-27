@@ -25,6 +25,12 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-27: the operator reported QTS 5.2.10.3577, recorded in ignored site configuration; NAS identity and version have not been independently authenticated. The QNAP web interface returned a certificate name mismatch. No certificate warning was bypassed and no credentials were supplied. A screenshot shows one ready pool and one ready thick volume; their reported capacities are in ignored site configuration. Exact free space and the Plex share remain pending operator evidence.
+
+Paperless preparation: pinned image manifests were checked for linux/amd64, the current consumer polling setting was corrected, and deployment planning no longer requires the deferred backup settings. Four focused tests, Compose configuration rendering without the Docker daemon, and shell syntax checks passed. These are source-level checks only: the stack, selected image combination, NAS permissions and application health have not been tested live. Docker remains stopped and disabled. See the Paperless runbook and sources.
+
+Immich release review: official release v3.3.5 supplies server and machine-learning containers, Valkey and an extension-enabled PostgreSQL image. Its example stores the photo library separately from the database. A deployable stack remains unprepared pending release-specific compatibility and storage decisions; no images were pulled and no service was started.
+
 2026-10-27: the operator explicitly removed self-hosted n8n and QNAP backups from the current deployment scope, preferring the existing cloud n8n service. Do not start n8n, request approval to activate it, create backup jobs, or revisit either item until the operator brings it up. Existing inactive n8n files and the application VM were retained; Docker is not started. This does not remove QNAP application storage from scope: Paperless and Immich still need independently approved, verified storage shares and exports. No reminder or automatic follow-up was requested.
 
 2026-10-27: the operator reports no existing QNAP shares for documents, photos, audiobooks or ebooks. This is reported inventory, not an authenticated NAS inspection. Separate application storage and its export paths/permissions still need a concrete plan and explicit NAS-change approval; existing Plex remains untouched.
