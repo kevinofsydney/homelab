@@ -4,6 +4,8 @@ Reproducible starting point for a single Dell OptiPlex Proxmox host. The first m
 
 ## Start here
 
+See [the first implementation plan](docs/implementation-plan.md) for current gaps, connectivity evidence and approval gates. The referenced original `docs/homelab-blueprint.md` has not been supplied; complete blueprint review remains pending.
+
 For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
 
 1. Read [the installation guide](docs/install.md), [preflight checklist](docs/preflight.md) and [architecture decisions](docs/architecture.md).

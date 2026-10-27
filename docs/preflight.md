@@ -2,6 +2,14 @@
 
 Record results before creating the first VM. `scripts/preflight.py` checks configuration syntax; the following checks require the operator on site.
 
+Before full site configuration is available, run the unauthenticated read-only connectivity probe:
+
+```sh
+python3 scripts/check-connectivity.py --proxmox-host <intended-host> --ca-file <trusted-ca.pem> --qnap-host <confirmed-nas-host>
+```
+
+It checks only Proxmox TCP 22/8006, verified management TLS and QNAP TCP 2049. Omit `--ca-file` to use the system trust store. Omit `--qnap-host` if unknown; the result then remains incomplete and exits nonzero. Each connection has a bounded timeout. No scanning, authentication, mounting or writes occur. Open ports do not prove node identity, NFS export access, ownership, capacity or restore behavior. A closed NFS port is not a reason to enable it without approval. Obtain a trusted CA/host identity before authenticated inventory; never bypass TLS checks. See the dated observations and missing inputs in [the implementation plan](implementation-plan.md).
+
 - [ ] Dell model/CPU/RAM/SSD match the brief; run a memory test and inspect SSD SMART data.
 - [ ] BIOS virtualization enabled; firmware updated from a trusted source.
 - [ ] Ethernet link stable; router DHCP reservation made for the Proxmox host and planned VM.
