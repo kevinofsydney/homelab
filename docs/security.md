@@ -10,3 +10,5 @@
 - Backups: restrict the dedicated QNAP share, periodically test restores, and keep one encrypted off-NAS copy. Backups may contain user or household data.
 
 Production deployment, running-service upgrades, network/firewall changes, elevated installs and credential changes require explicit approval. See `agents/permissions.md`.
+
+The [crawler and botnet policy](bot-protection.md) defines required controls and acceptance tests before public ingress: keep household services private, authenticate users at the edge, prevent origin bypass, limit abusive workload and test emergency restrictions. These are deployment requirements, not evidence that live protections are active.

@@ -4,6 +4,8 @@ Reproducible starting point for a single Dell OptiPlex Proxmox host. The first m
 
 ## Start here
 
+For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
+
 1. Read [the installation guide](docs/install.md), [preflight checklist](docs/preflight.md) and [architecture decisions](docs/architecture.md).
 2. Fill `config/site.example.json` as `config/site.json`. Fill no example with real secrets. `config/site.json` is ignored.
 3. On a trusted laptop with Python 3.10+, run `python scripts/preflight.py --config config/site.json`. This performs read-only local checks.
@@ -25,6 +27,7 @@ The GitHub repository is private. Continue keeping actual inventory and secrets 
 - `scripts/`: preflight, provisioning, deployment and backup validation.
 - `docs/`: architecture, security, storage, recovery and upstream source notes.
 - `agents/`: permission boundaries and issue-to-PR design.
+- [Bot protection](docs/bot-protection.md): required private-service boundaries and future public-ingress controls.
 
 ## Boundaries
 

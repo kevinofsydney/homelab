@@ -13,3 +13,5 @@ Passing source validation does not confirm a working Proxmox deployment. Before 
 - QNAP export identity, write permissions, successful backup, and an isolated VM restore.
 
 Application acceptance additionally requires OCR/upload tests, failure tests with NAS unavailable, authenticated private access, a complete backup and an isolated restore.
+
+Public application acceptance must also satisfy the live [bot-protection checks](bot-protection.md#acceptance-before-public-launch). Record which protections are prepared, applied and verified so another agent can continue without inferring live state from source files. Keep [shared context](../agents/context.md) and any relevant [handoff](../agents/handoffs/README.md) current when a milestone changes.

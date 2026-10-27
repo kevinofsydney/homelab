@@ -16,3 +16,5 @@ No IP addresses or VLAN IDs are assumed. Record actual addresses in ignored `con
 The TP-Link router may not support the required inter-zone rules. Verify its actual features before promising isolation. If it cannot enforce them, use Proxmox guest firewalls and host firewalls with tested allowlists, or a dedicated firewall/VLAN-capable device. Do not turn on a blanket Proxmox firewall before confirming console access and an escape path. Tailscale policy controls tailnet traffic; separate LAN restrictions are necessary.
 
 The future public web app app is the only candidate for public ingress. Its hosting decision remains open. If hosted on the Dell, publish only its HTTPS app origin through a narrowly scoped tunnel, with the admin interface and database kept private. Do not publish until security, backup, permissions and billing export tests pass.
+
+Follow [bot protection](bot-protection.md) before adding that public route. Verify user identity gating, IPv4/IPv6 origin isolation, rate/resource limits and emergency restrictions; the tunnel itself is not visitor authentication.
