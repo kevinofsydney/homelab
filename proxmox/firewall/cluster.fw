@@ -1,0 +1,4 @@
+# Proposed /etc/pve/firewall/cluster.fw. Turns on the Proxmox firewall framework.
+# Host and VM 130 stay unfiltered: see docs/dev-vm-isolation-plan.md.
+[OPTIONS]
+enable: 1

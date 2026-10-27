@@ -1,0 +1,3 @@
+# Proposed /etc/pve/nodes/pve1/host.fw. Keeps host filtering off so management access is unchanged.
+[OPTIONS]
+enable: 0

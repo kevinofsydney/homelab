@@ -1,0 +1,20 @@
+# Proposed /etc/pve/firewall/100.fw for the dev VM. Inbound is unchanged;
+# outbound may reach the internet and the router's DNS, but no private address.
+[OPTIONS]
+enable: 1
+policy_in: ACCEPT
+policy_out: ACCEPT
+dhcp: 1
+ndp: 1
+macfilter: 1
+
+[RULES]
+OUT ACCEPT -dest 192.168.0.1 -p udp -dport 53
+OUT ACCEPT -dest 192.168.0.1 -p tcp -dport 53
+OUT REJECT -dest 192.168.0.0/16
+OUT REJECT -dest 10.0.0.0/8
+OUT REJECT -dest 172.16.0.0/12
+OUT REJECT -dest 169.254.0.0/16
+OUT REJECT -dest fe80::/10 -p tcp
+OUT REJECT -dest fe80::/10 -p udp
+OUT REJECT -dest fc00::/7
