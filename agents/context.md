@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: the owner supplied the n8n cloud base URL and personal Telegram user ID. The URL is recorded in ignored site inventory; its unauthenticated HTTPS endpoint returned 200 from VM 101. The owner ID was entered through `hermes-secret owner` into the private guest dotenv; do not confuse the separately supplied bot ID with the owner ID. No bot token or provider key was entered. Prepared a [rootless sandbox proposal](../docs/hermes-rootless-sandbox-plan.md); no Docker or network changes were applied. Verify the owner-only and private-chat policy at gateway activation.
+
+
 2026-10-28: installed `/usr/local/bin/hermes-secret` on VM 101 through the reviewed Ansible helper playbook. Its final check returned `ok=1 changed=0 failed=0`, and owner/group/mode were `root root 755`. The helper prompts in a terminal, does not put secrets in arguments and writes a private Hermes dotenv file only when run by `hermes`; no token or owner ID was entered. See [credential setup](../docs/hermes-credential-setup.md). Read-only sandbox checks found no Docker, `newuidmap` or `slirp4netns`; `hermes` has subordinate UID/GID ranges but no lingering user manager. The rootless sandbox, public-destination allowlist, gateway supervision and authorization acceptance remain outstanding.
 
 
