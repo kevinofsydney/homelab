@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: inspected the pinned Telegram adapter and tested a synthetic `allowed_chats` configuration against its bare callback fallback. The group-message trigger and callback use different paths; the synthetic owner callback from a group was accepted despite the allowed-chat list, so the standalone diagnostic intentionally fails. This is not a live gateway test. The gateway remains stopped; a private-chat boundary covering the real callback path and rootless sandbox approval remain outstanding. See [Telegram authorization evidence](../docs/hermes-credential-setup.md).
+
+
 2026-10-28: extended the offline Telegram authorization diagnostic with the installed pinned `GatewayRunner` predicate, a bare runner, and a patched synthetic single-owner environment. The runner accepted the owner in a group while allowing the owner and denying a stranger in private. The full runner import affected the earlier mocked adapter callback result, demonstrating that the cases have distinct execution contexts. This is not an end-to-end gateway test or proof of live exploitability. Private-chat-only enforcement and real-gateway acceptance remain outstanding; rootless sandbox approval is still pending.
 
 
