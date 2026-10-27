@@ -6,8 +6,9 @@ Assume multiple coding agents, humans and sessions will contribute. A fresh agen
 
 1. Root `AGENTS.md`: shared operating rules, including local-only dependencies and approval boundaries. Tools that do not discover this file automatically should be directed to read it explicitly.
 2. [Shared project context](context.md): prepared versus verified state, current evidence and unresolved inputs.
-3. [Repository overview](../README.md), [architecture](../docs/architecture.md), [security](../docs/security.md) and the relevant service runbook.
-4. The current Git branch, working tree, open PR and any task handoff relevant to the requested change.
+3. [Open work](todo.md): the actionable list, its acceptance criteria, approval state and closure evidence.
+4. [Repository overview](../README.md), [architecture](../docs/architecture.md), [security](../docs/security.md) and the relevant service runbook.
+5. The current Git branch, working tree, open PR and any task handoff relevant to the requested change.
 
 ## Maintain portable context
 
