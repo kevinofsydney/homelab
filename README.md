@@ -24,6 +24,8 @@ For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guid
 
 The GitHub repository is private. Continue keeping actual inventory and secrets outside Git. Source validation runs in GitHub Actions; see [validation and hardware acceptance](docs/validation.md) for what those checks prove and what must be tested on the Dell.
 
+The BinaryLane VPS that ran Hermes and the UFC agent was destroyed; their rebuild here is planned, not started. See the [rebuild handoff](agents/handoffs/ufc-hermes-rebuild.md).
+
 ## Repository map
 
 - `config/`: example site configuration; actual configuration is ignored.
@@ -38,4 +40,4 @@ The GitHub repository is private. Continue keeping actual inventory and secrets 
 
 ## Boundaries
 
-No secrets in Git. Production deployment, firewall/network changes, NAS share creation, hypervisor operations and software installed with elevated privileges require explicit review and approval. No BinaryLane migration, QNAP Plex changes, public ingress or public web app user launch is included.
+No secrets in Git. Production deployment, firewall/network changes, NAS share creation, hypervisor operations and software installed with elevated privileges require explicit review and approval. No QNAP Plex changes, public ingress or public web app user launch is included.
