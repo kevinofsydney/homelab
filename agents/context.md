@@ -26,6 +26,11 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: the owner requested resilience across homelab services and explicitly enabled autostart for Hermes VM 101. Set `onboot: 1` and `startup: order=3`, started VM 101 and observed its serial login prompt. The guest agent did not respond during initial checks; guest IP and host key are not yet independently verified. Proxmox firewall is enabled, but **no VM 101-specific firewall policy has been installed**. No agent, credentials, gateway or n8n access were configured. Neither guest nor host reboot recovery has been tested for this VM. Confirm guest identity and develop an approved externally enforced isolation policy before activating agent software. Existing VMs 100 and 130 remained running.
+
+The owner expects future services to recover from shutdown automatically. For each service, document and test host and guest startup order, service restart behavior, dependency readiness and any fail-closed mount gates; record a real recovery test separately from configuration. Do not bypass storage or isolation checks to make autostart succeed.
+
+
 2026-10-28: following the owner's request to start work on Hermes and the preceding concrete VM proposal, cloned template 9000 as VM 101 (`hermes-agent`). Verified `qm status 101` stopped, `qm config 101` 4 vCPU / 8192 MiB / 80 GiB, `onboot: 0`, DHCP and bridge firewall flag set; no guest-specific firewall policy has been installed. Before cloning the host had 25 GiB available RAM, local-lvm 335322277 KiB available, and VM 101 was the next available ID. After cloning, VMs 100 and 130 remained running and the Proxmox firewall was enabled. The template volume was inactive; the plan-first script now reads its LVM metadata without activation when qemu-img cannot read it. **No first boot, credentials, gateway, CLI installation or network policy has occurred.** Follow the [Hermes plan](../docs/hermes-n8n-telegram-plan.md) for isolation and subsequent approval gates.
 
 

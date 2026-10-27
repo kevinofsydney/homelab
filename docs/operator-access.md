@@ -31,3 +31,17 @@ Before accepting a first-connection host-key prompt, compare against a fingerpri
 Server-side evidence: both approved fingerprints were present on both targets; the guest key file remained mode 0600 and owned by `devops`; the Proxmox symlink and existing entries were preserved; the existing operator key still authenticated and guest sudo worked. A second Ansible check reported no changes. Client-side login from Framework/Titan remains unverified until the operator tests it; no private key was available to the deploying agent.
 
 Validation commands: `python -m unittest discover -s tests -q` (17 passing tests), `python scripts/validate_repo.py` (24 JSON/YAML files), `ansible-playbook --syntax-check` for all five playbooks, and `git diff --check` passed. Final live operator-access check returned `ok=4 changed=0 failed=0` with no skipped tasks, including OpenSSH parsing of each public key.
+
+## Portable development connection helpers
+
+Copy `scripts/connect-dev.ps1` to trusted Windows operator machines, or `scripts/connect-dev.sh` to macOS/Linux machines. These are standalone scripts; private keys stay on each computer. Supply the development VM's verified address from site inventory. They enter the `coder` account by default; use `-Admin` (PowerShell) or `--admin` (Bash) for the `devops` shell. Specify an optional private-key path with `-IdentityFile` or as the second Bash argument.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\connect-dev.ps1 -Address <DEV_VM_ADDRESS>
+```
+
+```sh
+./connect-dev.sh <DEV_VM_ADDRESS>
+```
+
+The first connection uses OpenSSH's normal host-key confirmation. Compare its fingerprint with the independently verified guest key in private inventory before accepting; a changed key requires investigation. These helpers do not disable host-key checking, transfer private keys, or install anything. Each operator device must already be authorized. For a passphrase-protected private key, enter the key passphrase at the prompt.

@@ -9,7 +9,7 @@ For each `compose/<service>/` directory, provide `compose.yml`, `.env.example` w
 | Resource budget | Record measured/estimated RAM, CPU, disk growth and processing peaks; review aggregate host capacity |
 | Data placement | Database, cache and metadata on Dell SSD; bulk originals/media on a dedicated verified QNAP export |
 | Mount gate | Validate exact source/filesystem/mountpoint before start and backup; fail closed on missing NAS; bind mounts use `create_host_path: false` |
-| Startup | Plan/Compose validation by default; explicit apply only after approval; no automatic app restart that bypasses mount checks |
+| Startup | Configure automatic recovery after host and guest restart, in dependency order, after approval; verify with a real reboot and service health checks. Do not bypass mount or isolation gates |
 | Network | Private Tailscale bind with tested access policy; databases internal; public webhooks require separate ingress review |
 | Identity | Verify numeric ownership for each image; no privileged container or host Docker socket without separate justified review |
 | Release selection | Begin from official upstream Compose for a reviewed release; pin compatible image digests together; preserve upstream health/dependency checks |
