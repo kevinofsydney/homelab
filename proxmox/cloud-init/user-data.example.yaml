@@ -1,0 +1,7 @@
+#cloud-config
+# Optional custom snippet for future templates. Do not use with the initial clone workflow.
+# Cloud-init user and SSH key are supplied by Proxmox API settings instead.
+package_update: true
+package_upgrade: false
+ssh_pwauth: false
+disable_root: true

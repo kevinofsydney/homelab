@@ -1,0 +1,17 @@
+# QNAP storage and mounts
+
+Create dedicated QNAP NFS exports for `backups`, `paperless`, and later each media service. Do this in the QNAP UI after checking free capacity and confirming Plex uses different existing shares. Restrict each export to the intended guest or host IP and use separate service identities/permissions. Record real server and export paths in ignored site configuration. Avoid broad `no_root_squash` and never point these scripts at a Plex share.
+
+Traditional NFS uses client IP restrictions and numeric UID/GID permissions; a QNAP account password does not authenticate an NFS client. Use a trusted storage network, narrow export client rules and verified service UID/GID mapping. Give the development VM access only to its dedicated backup export, never the document/media exports. Set `PAPERLESS_UID` and `PAPERLESS_GID` to the verified mapped identity, pre-create directories with those permissions and test access with root squashing enabled. Paperless consumption uses polling because remote filesystems may not deliver local filesystem events.
+
+On each Linux guest, install `nfs-common`. Create the mountpoint once as root. Add a systemd automount or explicit NFS mount with `_netdev,nofail` only after reviewing actual export permissions. An illustrative fstab entry, with placeholders, is:
+
+```text
+<QNAP_HOST>:<EXPORT> /mnt/qnap-paperless nfs4 rw,_netdev,nofail,x-systemd.automount,x-systemd.mount-timeout=15s 0 0
+```
+
+Create `media`, `consume` and `export` on the mounted paperless export, and `postgres`, `valkey`, `data` on `/srv/paperless` on the SSD. Verify ownership for the chosen images. PostgreSQL must never use NFS/SMB as its live data directory.
+
+Before an application start, `scripts/deploy-paperless.sh` calls `findmnt` on the exact mountpoint and verifies its directories. Compose bind mounts set `create_host_path: false`. The webserver has no Docker restart policy so it cannot start automatically before the NAS mount is checked. If the NAS is unavailable, deployment fails instead of creating a local fallback directory. For automatic restart after boot, add a reviewed systemd unit with `RequiresMountsFor=/mnt/qnap-paperless`, `BindsTo` the actual mount unit, and `ExecStartPre` invoking `scripts/check-mount.sh`. Stop the app if the mount disappears, investigate storage, remount, validate and restart. Avoid writes until NAS contents are confirmed.
+
+Proxmox VM backups to QNAP should be configured in Proxmox after adding a dedicated NFS storage with `VZDump backup file` content only. Set a conservative retention policy after verifying capacity. The `validate-backup.sh` probe tests the mounted destination but a full VM restore test is necessary. A second copy outside QNAP protects against NAS failure or ransomware.

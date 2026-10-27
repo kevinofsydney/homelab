@@ -1,0 +1,10 @@
+{
+  "role": "isolated interactive development",
+  "vmid_config_key": "proxmox.vmid",
+  "os": "Ubuntu Server 24.04 LTS cloud image",
+  "initial_vcpu": 4,
+  "initial_memory_mb": 8192,
+  "initial_disk_gb": 100,
+  "network": "private bridge; SSH from trusted devices only",
+  "notes": "Do not attach production credentials or management network access to coding workers."
+}

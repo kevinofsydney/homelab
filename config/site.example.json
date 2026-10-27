@@ -1,0 +1,24 @@
+{
+  "proxmox": {
+    "api_url": "https://REPLACE_PROXMOX_HOST:8006",
+    "node": "REPLACE_NODE_NAME",
+    "template_vmid": 9000,
+    "vmid": 100,
+    "vm_name": "dev",
+    "bridge": "REPLACE_BRIDGE",
+    "storage": "REPLACE_STORAGE_ID",
+    "ssh_public_key_file": "REPLACE_ABSOLUTE_PUBLIC_KEY_PATH",
+    "ciuser": "devops"
+  },
+  "development_vm": {
+    "cores": 4,
+    "memory_mb": 8192,
+    "disk_gb": 100,
+    "ipconfig0": "ip=dhcp"
+  },
+  "qnap": {
+    "server": "REPLACE_NAS_HOST",
+    "nfs_export": "REPLACE_NFS_EXPORT",
+    "mountpoint": "/mnt/qnap-backups"
+  }
+}

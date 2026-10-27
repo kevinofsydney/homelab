@@ -1,0 +1,7 @@
+---
+- name: Mount dedicated QNAP backup export on development VM
+  hosts: development
+  become: true
+  gather_facts: true
+  roles:
+    - qnap_backup_mount

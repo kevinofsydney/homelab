@@ -1,0 +1,79 @@
+name: paperless
+services:
+  broker:
+    image: ${VALKEY_IMAGE:?Set immutable Valkey image digest}
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ${PAPERLESS_LOCAL_ROOT:?Set local SSD root}/valkey
+        target: /data
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+  db:
+    image: ${POSTGRES_IMAGE:?Set immutable PostgreSQL image digest}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: ${PAPERLESS_DB_PASSWORD:?Set DB password}
+    volumes:
+      - type: bind
+        source: ${PAPERLESS_LOCAL_ROOT}/postgres
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+  webserver:
+    image: ${PAPERLESS_IMAGE:?Set immutable Paperless image digest}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "${PAPERLESS_BIND_IP:?Set VM Tailscale IP}:${PAPERLESS_PORT:-8000}:8000"
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBENGINE: postgresql
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: ${PAPERLESS_DB_PASSWORD}
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?Set secret key}
+      PAPERLESS_URL: ${PAPERLESS_URL:?Set private URL}
+      PAPERLESS_TIME_ZONE: ${PAPERLESS_TIME_ZONE:-Australia/Sydney}
+      PAPERLESS_OCR_LANGUAGE: ${PAPERLESS_OCR_LANGUAGE:-eng}
+      USERMAP_UID: ${PAPERLESS_UID:?Set verified NAS service UID}
+      USERMAP_GID: ${PAPERLESS_GID:?Set verified NAS service GID}
+      PAPERLESS_CONSUMER_POLLING: "30"
+    volumes:
+      - type: bind
+        source: ${PAPERLESS_LOCAL_ROOT}/data
+        target: /usr/src/paperless/data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PAPERLESS_NAS_ROOT:?Set mounted NAS root}/media
+        target: /usr/src/paperless/media
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PAPERLESS_NAS_ROOT}/consume
+        target: /usr/src/paperless/consume
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PAPERLESS_NAS_ROOT}/export
+        target: /usr/src/paperless/export
+        bind:
+          create_host_path: false

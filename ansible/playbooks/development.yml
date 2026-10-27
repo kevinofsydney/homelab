@@ -1,0 +1,7 @@
+---
+- name: Configure isolated development VM
+  hosts: development
+  become: true
+  gather_facts: true
+  roles:
+    - development

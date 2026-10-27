@@ -1,0 +1,9 @@
+# Paperless staging stack
+
+This is private-only and intentionally inactive. Use a separate application VM after the development VM and QNAP backup milestone. Install Docker Engine and the Compose plugin from Docker's official Ubuntu repository using reviewed package versions. The operator must approve privileged installation. Do not put the development user in the `docker` group; Docker access is equivalent to root on that VM.
+
+Copy `.env.example` to `.env`, fill immutable image digests from reviewed releases, strong secrets, Tailscale bind IP and private URL, then `chmod 600 .env`. Select a PostgreSQL 17 image digest because this Compose layout uses `/var/lib/postgresql/data`; confirm compatibility before pinning. Create `/srv/paperless/{postgres,valkey,data}` on the SSD and `media`, `consume`, `export` on the verified NFS share with correct image ownership. `scripts/deploy-paperless.sh` validates all paths and Compose without starting it. `--apply` starts it. Bind only to the VM's Tailscale IP and verify access controls from both trusted and untrusted devices.
+
+`scripts/backup-paperless.sh` requires `PAPERLESS_BACKUP_MOUNT` in `.env` and writes a timestamped DB/media set on a separate verified NFS backup mount. It briefly stops the webserver. Test an isolated restore before production. Review release notes and update digests only through a change with a backup, health check and rollback plan.
+
+Set `PAPERLESS_NAS_SOURCE` and `PAPERLESS_BACKUP_SOURCE` to the exact NFS `server:/export` values reported by `findmnt`. The scripts reject a different export even if its filesystem is NFS. Use unquoted `KEY=value` entries in `.env`; generate URL-safe secrets to avoid environment-file quoting differences. Validate backups without `--apply` first; the backup script restores the webserver's prior running state.

@@ -1,0 +1,4 @@
+---
+qnap_backup_server: REPLACE_NAS_HOST
+qnap_backup_export: REPLACE_NFS_EXPORT
+qnap_backup_mountpoint: /mnt/qnap-backups

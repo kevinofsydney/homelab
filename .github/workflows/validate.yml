@@ -1,0 +1,50 @@
+name: Validate infrastructure source
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies inside the checkout
+        run: |
+          python -m venv .local/venv
+          .local/venv/bin/python -m pip install -r ansible/requirements.txt -r scripts/requirements-validation.txt
+      - name: Test provisioning safety and parse configuration
+        run: |
+          .local/venv/bin/python -m unittest discover -s tests -v
+          .local/venv/bin/python scripts/validate_repo.py
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Validate Ansible playbooks without connecting to guests
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
+        run: |
+          for playbook in ansible/playbooks/*.yml; do
+            .local/venv/bin/ansible-playbook -i ansible/inventory/hosts.example.yml "$playbook" --syntax-check
+          done
+      - name: Validate Paperless Compose without starting containers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          content = Path('compose/paperless/.env.example').read_text()
+          content = content.replace('sha256:REPLACE', 'sha256:' + '0' * 64)
+          content = content.replace('REPLACE_TAILSCALE_IP', '127.0.0.1')
+          content = content.replace('REPLACE_TAILSCALE_NAME', 'paperless.example.invalid')
+          content = content.replace('REPLACE_GENERATED_SECRET', 'validation-only-not-a-real-secret')
+          content = content.replace('REPLACE_VERIFIED_UID', '1000').replace('REPLACE_VERIFIED_GID', '1000')
+          Path('.local/compose-validation.env').write_text(content)
+          PY
+          docker compose --env-file .local/compose-validation.env -f compose/paperless/compose.yml config --quiet

@@ -1,0 +1,10 @@
+all:
+  children:
+    development:
+      hosts:
+        dev:
+          ansible_host: REPLACE_VM_IP_OR_TAILSCALE_NAME
+          ansible_user: devops
+          ansible_ssh_private_key_file: REPLACE_ABSOLUTE_PRIVATE_KEY_PATH
+          qnap_backup_server: REPLACE_NAS_HOST
+          qnap_backup_export: REPLACE_NFS_EXPORT

@@ -1,0 +1,16 @@
+.local/
+config/site.json
+ansible/inventory/hosts.yml
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+__pycache__/
+*.pyc
+backups/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
