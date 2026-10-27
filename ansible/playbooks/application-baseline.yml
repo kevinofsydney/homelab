@@ -1,0 +1,8 @@
+---
+- name: Configure trusted application VM baseline
+  hosts: applications
+  become: true
+  gather_facts: true
+  roles:
+    - application_baseline
+    - operator_access

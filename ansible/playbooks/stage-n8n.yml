@@ -1,0 +1,7 @@
+---
+- name: Stage private n8n files and local data directory
+  hosts: applications
+  become: true
+  gather_facts: true
+  roles:
+    - n8n_staged

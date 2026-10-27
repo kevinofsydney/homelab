@@ -35,7 +35,7 @@ The operator reports Proxmox installed on the Dell (i5-12500T, 32 GB RAM, 512 GB
 | --- | --- |
 | Proxmox version, trusted CA or independently verified host key, actual node/bridge/storage IDs | Identify the host and avoid altering the wrong resource |
 | Available VM/template IDs, Ubuntu image checksum, SSH public key, guest DHCP reservation | Prepare a specific clone plan without collisions or invented values |
-| QNAP address, QTS version, existing shares, free space, dedicated export paths and numeric ownership | Probe the correct NAS and preserve Plex/storage |
+| QNAP QTS version, existing shares, free space, dedicated export paths and numeric ownership | The supplied address was probed; NFS refused connections. Verify exports and preserve Plex/storage |
 | Tailnet administrators, intended private service identities and current policy | Confirm access boundaries without changing the existing tailnet |
 | Reviewed CLI versions and provider login choices | Reproducible Codex/OpenCode installs and controlled costs |
 | Hermes provider/model, spend ceiling, Telegram identity and permitted tools | Configure the installed dormant assistant without granting broad tools or unbounded spend |
@@ -66,7 +66,7 @@ Check mode and source validation do not authorize applying a plan. Reconfirm SSD
 
 Codex and OpenCode have a version-controlled installer and unprivileged account; the pinned releases are installed. Hermes's pinned, reviewed CLI is now installed dormant under its own non-sudo account. Provider authentication, messaging activation and tool policy remain separate gates; see [private access and provider setup](private-access.md). Do not grant a messaging token before those controls are reviewed. An interactive trusted-operator VM and unattended issue worker have different trust boundaries.
 
-Paperless already has the initial Compose implementation. Immich, n8n and selected media applications should each use the [reusable service contract](../compose/README.md), their own runbook and the then-current official upstream Compose baseline. These later stacks are planned, not implemented or validated. Do not invent image tags, hardware-acceleration paths or NAS exports just to produce runnable YAML.
+Paperless has an initial Compose implementation and n8n has been staged on the separate application VM; neither is running. Immich and selected media applications should use the [reusable service contract](../compose/README.md), their own runbook and the then-current official upstream Compose baseline. Those later stacks are planned, not implemented or validated. Do not invent image tags, hardware-acceleration paths or NAS exports just to produce runnable YAML.
 
 The worker dispatcher remains a design rather than an enabled automation. Use immutable approved source references, single-use workers, narrow expiring credentials and a separate PR publisher. Keep deployment credentials outside workers; test isolation before giving workers issue content. Source PR merge authorization never authorizes production deployment.
 

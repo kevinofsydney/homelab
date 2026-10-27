@@ -1,0 +1,63 @@
+---
+- name: Require reviewed Ubuntu platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+- name: Inspect existing data paths
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+  loop: [/srv/n8n, /srv/n8n/data, /opt/homelab/n8n]
+  register: n8n_paths
+- name: Refuse symlinked or unrelated existing data directories
+  ansible.builtin.assert:
+    that:
+      - not (n8n_paths.results[0].stat.islnk | default(false))
+      - not (n8n_paths.results[1].stat.islnk | default(false))
+      - not n8n_paths.results[1].stat.exists or n8n_paths.results[1].stat.uid == 1000
+- name: Inspect filesystem containing the data path
+  ansible.builtin.command:
+    argv:
+      - findmnt
+      - -T
+      - "{{ '/srv/n8n/data' if n8n_paths.results[1].stat.exists else ('/srv/n8n' if n8n_paths.results[0].stat.exists else '/srv') }}"
+      - -n
+      - -o
+      - FSTYPE
+  changed_when: false
+  check_mode: false
+  register: n8n_data_filesystem
+- name: Require a local filesystem for n8n data
+  ansible.builtin.assert:
+    that: n8n_data_filesystem.stdout in ['ext4', 'xfs', 'btrfs']
+- name: Create application configuration directory
+  ansible.builtin.file:
+    path: /opt/homelab/n8n
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Create SSD data directory
+  ansible.builtin.file:
+    path: /srv/n8n/data
+    state: directory
+    owner: '1000'
+    group: '1000'
+    mode: '0700'
+- name: Stage pinned Compose definition
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../compose/n8n/compose.yml"
+    dest: /opt/homelab/n8n/compose.yml
+    owner: root
+    group: root
+    mode: '0644'
+  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)
+- name: Stage plan-by-default deployment wrapper
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/deploy-n8n.sh"
+    dest: /opt/homelab/n8n/deploy-n8n.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)

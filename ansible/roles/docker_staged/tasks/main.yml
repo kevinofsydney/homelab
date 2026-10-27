@@ -1,0 +1,56 @@
+---
+- name: Require reviewed Ubuntu platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+      - ansible_facts['architecture'] == 'x86_64'
+- name: Inspect existing Docker services
+  ansible.builtin.service_facts:
+- name: Refuse to stop an existing running Docker service
+  ansible.builtin.assert:
+    that:
+      - "'docker.service' not in ansible_facts.services or ansible_facts.services['docker.service'].state != 'running'"
+      - "'docker.socket' not in ansible_facts.services or ansible_facts.services['docker.socket'].state != 'running'"
+- name: Inspect existing Docker repository
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/docker.list
+  register: docker_repo_before
+- name: Inspect apt key directory
+  ansible.builtin.stat:
+    path: /etc/apt/keyrings
+  register: docker_key_dir_before
+- name: Create apt key directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+- name: Download reviewed Docker signing key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    checksum: "sha256:{{ docker_key_sha256 }}"
+    mode: '0644'
+  when: not ansible_check_mode or docker_key_dir_before.stat.isdir | default(false)
+- name: Configure Docker Ubuntu Noble repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    mode: '0644'
+    content: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable
+- name: Install pinned Docker packages without starting services
+  ansible.builtin.apt:
+    name: "{{ docker_package_versions }}"
+    state: present
+    update_cache: true
+    policy_rc_d: 101
+  when: not ansible_check_mode or docker_repo_before.stat.exists
+- name: Refresh service facts after installation
+  ansible.builtin.service_facts:
+- name: Keep Docker daemon and socket disabled pending network approval
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: [docker.service, docker.socket]
+  when: not ansible_check_mode or item in ansible_facts.services

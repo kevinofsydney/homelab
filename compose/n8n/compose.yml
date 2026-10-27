@@ -1,0 +1,30 @@
+name: n8n
+services:
+  n8n:
+    # n8n stable release 2.44.7, reviewed 2026-10-27; update through a change review.
+    image: docker.io/n8nio/n8n:2.44.7@sha256:942bc274709f27f99f7c6024a785d8e8f75ac06838cabcba448abb8d9127ec7b
+    restart: "no"
+    init: true
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      GENERIC_TIMEZONE: Australia/Sydney
+      TZ: Australia/Sydney
+      N8N_HOST: localhost
+      N8N_PROTOCOL: http
+      N8N_PORT: '5678'
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: 'true'
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      N8N_PERSONALIZATION_ENABLED: 'false'
+    volumes:
+      - type: bind
+        source: /srv/n8n/data
+        target: /home/node/.n8n
+        bind:
+          create_host_path: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 2g

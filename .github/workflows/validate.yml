@@ -48,3 +48,5 @@ jobs:
           Path('.local/compose-validation.env').write_text(content)
           PY
           docker compose --env-file .local/compose-validation.env -f compose/paperless/compose.yml config --quiet
+      - name: Validate n8n Compose without starting containers
+        run: docker compose -f compose/n8n/compose.yml config --quiet

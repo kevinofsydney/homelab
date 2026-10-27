@@ -1,0 +1,30 @@
+---
+- name: Require Ubuntu 24.04
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+- name: Install baseline packages
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, python3, qemu-guest-agent]
+    state: present
+    update_cache: true
+- name: Inspect available services
+  ansible.builtin.service_facts:
+- name: Enable QEMU guest agent
+  ansible.builtin.service:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
+  when: not ansible_check_mode or 'qemu-guest-agent.service' in ansible_facts.services
+- name: Restrict guest SSH to key-based administrator login
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00-homelab.conf
+    mode: '0644'
+    validate: /usr/sbin/sshd -t -f %s
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers devops
+  notify: reload ssh

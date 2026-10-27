@@ -8,6 +8,8 @@ Read [the supplied blueprint](docs/homelab-blueprint.md) with [the first impleme
 
 The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. Backups, isolation and application deployment are still pending.
 
+A separate [home-services VM](docs/application-vm.md) now has Docker packages and a private n8n configuration staged. Docker network activation and the first container remain pending explicit firewall-change approval.
+
 For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
 
 1. Read [the installation guide](docs/install.md), [preflight checklist](docs/preflight.md) and [architecture decisions](docs/architecture.md).
@@ -28,6 +30,7 @@ The GitHub repository is private. Continue keeping actual inventory and secrets 
 - `proxmox/`: template procedure and VM definition.
 - `ansible/`: guest baseline plus separate private-access and dormant assistant-tool playbooks.
 - `compose/paperless/`: first private application stack, gated on its NAS mount.
+- `compose/n8n/`: loopback-only private n8n stack, staged without starting containers.
 - `scripts/`: preflight, provisioning, deployment and backup validation.
 - `docs/`: architecture, security, storage, recovery and upstream source notes.
 - `agents/`: permission boundaries and issue-to-PR design.

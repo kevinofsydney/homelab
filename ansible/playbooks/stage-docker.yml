@@ -1,0 +1,7 @@
+---
+- name: Stage Docker packages without starting the daemon
+  hosts: applications
+  become: true
+  gather_facts: true
+  roles:
+    - docker_staged
