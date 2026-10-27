@@ -6,6 +6,8 @@ Reproducible starting point for a single Dell OptiPlex Proxmox host. The first m
 
 Read [the supplied blueprint](docs/homelab-blueprint.md) with [the first implementation plan](docs/implementation-plan.md) for its reconciliation, current gaps, connectivity evidence and approval gates. The blueprint is a design reference; current repository safety rules and explicit operator authorization govern execution.
 
+The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. Backups, isolation and application deployment are still pending.
+
 For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
 
 1. Read [the installation guide](docs/install.md), [preflight checklist](docs/preflight.md) and [architecture decisions](docs/architecture.md).

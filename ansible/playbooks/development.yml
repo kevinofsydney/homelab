@@ -1,5 +1,5 @@
 ---
-- name: Configure isolated development VM
+- name: Configure trusted development VM
   hosts: development
   become: true
   gather_facts: true

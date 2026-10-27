@@ -2,8 +2,8 @@
 - name: Require Ubuntu 24.04
   ansible.builtin.assert:
     that:
-      - ansible_distribution == 'Ubuntu'
-      - ansible_distribution_version == '24.04'
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
 - name: Install baseline packages
   ansible.builtin.apt:
     name:
@@ -19,11 +19,14 @@
       - unattended-upgrades
     state: present
     update_cache: true
+- name: Inspect installed services for first-run check mode
+  ansible.builtin.service_facts:
 - name: Enable guest agent
   ansible.builtin.service:
     name: qemu-guest-agent
     enabled: true
     state: started
+  when: not ansible_check_mode or 'qemu-guest-agent.service' in ansible_facts.services
 - name: Create coding group
   ansible.builtin.group:
     name: "{{ coding_user }}"
@@ -37,6 +40,7 @@
     password_lock: true
     groups: ''
     append: false
+  register: coding_account
 - name: Disable password SSH login
   ansible.builtin.copy:
     dest: /etc/ssh/sshd_config.d/00-homelab.conf
@@ -55,6 +59,7 @@
     owner: "{{ coding_user }}"
     group: "{{ coding_user }}"
     mode: '0750'
+  when: not ansible_check_mode or not coding_account.changed
 - name: Copy reviewed CLI installer to coding account
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../scripts/install-ai-cli.sh"
@@ -62,3 +67,15 @@
     owner: "{{ coding_user }}"
     group: "{{ coding_user }}"
     mode: '0750'
+  when: not ansible_check_mode or not coding_account.changed
+- name: Add user-local coding tools to login PATH
+  ansible.builtin.blockinfile:
+    path: "/home/{{ coding_user }}/.profile"
+    create: true
+    owner: "{{ coding_user }}"
+    group: "{{ coding_user }}"
+    mode: '0644'
+    marker: '# {mark} HOMELAB AI TOOLS'
+    block: |
+      export PATH="$HOME/.local/ai-tools/node/bin:$HOME/.local/ai-tools/npm/node_modules/.bin:$PATH"
+  when: not ansible_check_mode or not coding_account.changed

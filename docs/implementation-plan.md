@@ -1,6 +1,6 @@
 # First implementation plan
 
-Status: prepared source only, 2026-10-27. No infrastructure deployment is authorized by this plan.
+Status: initial development bootstrap approved and executed on 2026-10-27; later infrastructure remains gated. See [deployment evidence and remaining gates](development-bootstrap.md). This plan itself grants no authorization beyond the operator's explicit approval.
 
 ## Blueprint review boundary
 

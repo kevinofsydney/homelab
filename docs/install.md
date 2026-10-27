@@ -12,6 +12,8 @@ Copy `config/site.example.json` to ignored `config/site.json`; fill the real val
 
 ## 3. Cloud template and VM
 
+For the approved initial SSH bootstrap, see [development bootstrap](development-bootstrap.md). It records the exact procedure, deployed state and remaining gates. Do not recreate existing template/VM IDs or reinstall the host. The API path below remains the alternative for later narrowly scoped provisioning.
+
 Follow `proxmox/template.md` on the Proxmox host. Download and checksum the official Ubuntu 24.04 cloud image. Create a dedicated Proxmox API token with reviewed minimal rights. On the trusted laptop:
 
 ```sh
