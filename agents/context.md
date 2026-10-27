@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: inspected the pinned gateway authorization source and confirmed `TELEGRAM_ALLOWED_USERS` also applies to group conversations; the owner allowlist is not evidence of private-chat-only enforcement. No gateway was started. The dormant Hermes `terminal.backend` default was `local`; changed it to `docker` with its supported CLI and independently read back the value. Docker is not installed and this setting does not prove sandboxing or a fail-closed fallback. Added a reproducible backend playbook, whose live read-only check returned `ok=3 changed=0 failed=0`. Corrected the unapproved rootless user playbook to use root `runuser`: a live backend check showed that Ansible's unprivileged `become_user` temp-file ACL mechanism fails on this guest. Rootless service setup remains unapplied and untested. See [credential setup](../docs/hermes-credential-setup.md) for Telegram acceptance.
+
+
 2026-10-28: prepared separate rootless Docker package and user-service Ansible playbooks. Both passed syntax checks; a package-stage check on VM 101 returned `ok=11 changed=2 failed=0 skipped=2`, skipping actual package installation because the Docker repository is not present. No packages, user service or networking were changed. The user-service playbook is syntax-checked only; its reviewed Docker setup tool starts a rootless service, so applying either playbook still requires the pending explicit approval. No sandbox image or digest has been verified. See [rootless sandbox proposal](../docs/hermes-rootless-sandbox-plan.md).
 
 
