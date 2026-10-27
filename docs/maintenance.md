@@ -11,3 +11,18 @@ For a Paperless update:
 5. If the new version fails before schema migration, restore the old digests and restart. If the database schema changed, restore the matching SQL/media/data backup in an isolated VM first, then follow the tested recovery procedure; do not blindly downgrade a migrated database.
 
 For the development VM, use versioned CLI installs and preserve previous local package versions until a test run passes. Proxmox and network changes require their own reviewed change plan and a current host backup. Updates may require manual intervention; no script promises a universal rollback.
+
+## Automatic package updates
+
+Both guests use Ubuntu's shipped `unattended-upgrades`, enabled through `apt-daily.timer`, `apt-daily-upgrade.timer` and `/etc/apt/apt.conf.d/20auto-upgrades`. It installs from the release and security pockets only, so third-party repositories such as Docker and Tailscale are never upgraded automatically, and automatic reboot stays off: a kernel update leaves `/var/run/reboot-required` for the operator to act on.
+
+Check it without changing anything:
+
+```bash
+systemctl list-timers 'apt-daily*'
+sudo tail -n 20 /var/log/unattended-upgrades/unattended-upgrades.log
+sudo unattended-upgrade --dry-run
+cat /var/run/reboot-required /var/run/reboot-required.pkgs 2>/dev/null
+```
+
+This covers guest OS packages only. It does not update Paperless, n8n or any other pinned container image — those follow the application procedure above, which performs the digest review, Compose validation and restore checks that a package upgrade cannot.
