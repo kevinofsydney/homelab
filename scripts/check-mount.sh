@@ -4,12 +4,15 @@ mountpoint="${1:?usage: check-mount.sh /mount/path server:/export}"
 expected_source="${2:?Set the expected NFS server:/export source}"
 # Touch the directory to trigger a configured automount before inspecting it.
 timeout 15 stat -- "$mountpoint/." >/dev/null
-fstype="$(findmnt --mountpoint "$mountpoint" --noheadings --output FSTYPE)"
+# systemd automounts can list an autofs layer followed by the mounted export.
+# Check the topmost exact mount, not an underlying NFS layer.
+mount_record="$(findmnt --mountpoint "$mountpoint" --noheadings --raw --output SOURCE,FSTYPE | tail -n 1)"
+read -r actual_source fstype extra <<< "$mount_record"
+[[ -z "${extra:-}" ]] || { echo "Invalid mount information" >&2; exit 1; }
 [[ "$fstype" == nfs || "$fstype" == nfs4 ]] || {
   echo "Required NAS mount unavailable or wrong filesystem: $mountpoint" >&2
   exit 1
 }
-actual_source="$(findmnt --mountpoint "$mountpoint" --noheadings --output SOURCE)"
 [[ "$actual_source" == "$expected_source" ]] || {
   echo "NAS source mismatch at $mountpoint" >&2; exit 1;
 }
