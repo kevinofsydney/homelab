@@ -9,7 +9,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts/clone-application-vm.sh"
 
 
 class ApplicationVmTests(unittest.TestCase):
-    def run_plan(self, occupied=False, free="300000000", template=True, apply=False, disk_bytes=3758096384, resources=None):
+    def run_plan(self, occupied=False, free="300000000", template=True, apply=False, disk_bytes=3758096384, resources=None, inactive=False, lvm_fail=False):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             changes = root / "changes"
@@ -19,7 +19,8 @@ class ApplicationVmTests(unittest.TestCase):
                 "ssh-keygen": ":",
                 "pvesh": "exit 1" if occupied else 'echo "$4"',
                 "pvesm": f"if [ \"$1\" = path ]; then echo /fake/disk; else printf 'Name Type Status Total Used Available %%\\nstore lvmthin active 350000000 1 {free} 0\\n'; fi",
-                "qemu-img": f"printf '{{\"virtual-size\":{disk_bytes}}}\\n'",
+                "lvs": "exit 1" if lvm_fail else f"echo {disk_bytes}",
+                "qemu-img": "exit 1" if inactive else f"printf '{{\"virtual-size\":{disk_bytes}}}\\n'",
                 "qm": ('if [ "$1" = config ]; then printf "template: 1\\nide2: store:cloudinit\\nscsi0: store:disk\\n"; '
                        'else echo "$*" >> "$CHANGES"; fi') if template else 'if [ "$1" = config ]; then echo "scsi0: store:disk"; else echo "$*" >> "$CHANGES"; fi',
             }
@@ -61,6 +62,22 @@ class ApplicationVmTests(unittest.TestCase):
 
     def test_larger_disk_changes_headroom_check(self):
         result, changes = self.run_plan(free="140000000", resources={"APP_VM_DISK_GIB": "80"}, apply=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(changes, [])
+
+    def test_inactive_lvm_template_uses_metadata(self):
+        result, changes = self.run_plan(inactive=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(changes, [])
+
+    def test_inactive_lvm_metadata_failure_blocks_apply(self):
+        result, changes = self.run_plan(inactive=True, lvm_fail=True, apply=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(changes, [])
+
+    def test_inactive_oversized_template_blocks_apply(self):
+        result, changes = self.run_plan(inactive=True, disk_bytes=81 * 1024 ** 3,
+                                        resources={"APP_VM_DISK_GIB": "80"}, apply=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(changes, [])
 

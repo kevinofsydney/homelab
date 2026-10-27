@@ -39,7 +39,11 @@ config=$(qm config "$TEMPLATE_ID") || exit 2
 disk_volume=$(printf '%s\n' "$config" | awk -F ': ' '$1 == "scsi0" {split($2,a,","); print a[1]}')
 [[ -n "$disk_volume" ]] || exit 2
 disk_path=$(pvesm path "$disk_volume") || exit 2
-disk_bytes=$(qemu-img info --output=json "$disk_path" | python3 -c 'import json,sys; print(json.load(sys.stdin)["virtual-size"])') || exit 2
+# Thin LVM template volumes may be inactive, so their /dev path does not exist.
+# Query LVM metadata without activating the template when qemu-img cannot read it.
+if ! disk_bytes=$(qemu-img info --output=json "$disk_path" 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["virtual-size"])' 2>/dev/null); then
+  disk_bytes=$(lvs --noheadings --units b --nosuffix -o lv_size -- "$disk_path" | python3 -c 'import decimal,sys; n=decimal.Decimal(sys.stdin.read().strip()); assert n > 0 and n == n.to_integral_value(); print(int(n))') || { echo 'Cannot determine template disk size' >&2; exit 2; }
+fi
 [[ "$disk_bytes" =~ ^[0-9]+$ ]] && (( disk_bytes <= APP_VM_DISK_GIB * 1024 * 1024 * 1024 )) || { echo 'Template disk is larger than requested disk' >&2; exit 2; }
 # Keep 20% of the thin-pool capacity after allowing for the full requested virtual disk.
 pvesm status --storage "$PVE_STORAGE" | awk -v disk_gib="$APP_VM_DISK_GIB" 'NR==2 { if ($3 != "active" || ($6 - disk_gib*1024*1024) < ($4 * 0.20)) exit 1; seen=1 } END { if (!seen) exit 1 }' || { echo 'Insufficient reviewed storage headroom' >&2; exit 2; }
