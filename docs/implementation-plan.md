@@ -15,7 +15,7 @@ The operator supplied the original [blueprint](homelab-blueprint.md), dated 2026
 | QNAP shares and per-service credentials | Paths in the blueprint are illustrative. Existing NFS pattern requires exact exports, client restrictions and numeric UID/GID mapping; service-account passwords alone do not authenticate traditional NFS. No share creation or Plex change is approved |
 | No automatic merge | Superseded for `kevinofsydney/homelab` by the owner's later standing authorization in root `AGENTS.md`. Other repositories keep their own policy; draft worker PRs require trusted review and passing current-head checks. Production deployment still requires explicit approval |
 | Guest firewall, Docker, Tailscale and updates | Planned privileged changes, not completed by source scaffolding. Prepare reviewed package versions and change plans; prove a second SSH session before restrictions; do not give `coder` Docker access |
-| Hermes Agent and Telegram | Intended role clarified: evaluate an assistant with DeepSeek/OpenRouter, allowlisted Telegram users, budgets and narrow tools. Exact upstream repository/release, approved Telegram identity and spend ceiling remain missing; no installation or bot credential use yet |
+| Hermes Agent and Telegram | Nous Research upstream and stable v0.22.5 are now reviewed; pinned dormant CLI installed in a separate account. Approved Telegram identity, model/provider, spend ceiling and enabled tools remain missing; no gateway activation or bot credential use yet |
 | Grok GitHub connector or public MCP/webhook | Optional later integrations. Verify current upstream capabilities before implementation. Prefer issue creation through narrow permissions; public endpoints require separate ingress/security review and explicit approval |
 | Paperless built-in AI and external Paperless-AI status | Time-sensitive claims in the source document have not been independently verified in this review. Check official release documentation and upstream maintenance status before selecting features. Keep cloud AI disabled pending document privacy choices |
 | Immich, n8n, Audiobookshelf/Kavita | Intended media candidates clarified; final selection and release-compatible stacks remain pending. Use the reusable service contract rather than inventing deployable image sets or exports |
@@ -38,7 +38,7 @@ The operator reports Proxmox installed on the Dell (i5-12500T, 32 GB RAM, 512 GB
 | QNAP address, QTS version, existing shares, free space, dedicated export paths and numeric ownership | Probe the correct NAS and preserve Plex/storage |
 | Tailnet administrators, intended private service identities and current policy | Confirm access boundaries without changing the existing tailnet |
 | Reviewed CLI versions and provider login choices | Reproducible Codex/OpenCode installs and controlled costs |
-| Exact Hermes project/repository and desired capabilities | Avoid installing an ambiguous package; review tool, messaging and credential access |
+| Hermes provider/model, spend ceiling, Telegram identity and permitted tools | Configure the installed dormant assistant without granting broad tools or unbounded spend |
 | App priorities, user count, library sizes, media application choices and recovery targets | Size the SSD/RAM and choose backup retention only after approval |
 | Router/firewall isolation capabilities and worker egress policy | Prove workers cannot reach management or production before unattended execution |
 
@@ -64,7 +64,7 @@ Check mode and source validation do not authorize applying a plan. Reconfirm SSD
 
 ## Service and coding-tool preparation
 
-Codex and OpenCode already have a version-controlled installer and separate unprivileged account. Review their exact releases and supported authentication before execution. Hermes remains a blocked installation target until its identity and required permissions are confirmed; do not execute a generic curl installer or grant it a messaging token. An interactive trusted-operator VM and unattended issue worker have different trust boundaries.
+Codex and OpenCode have a version-controlled installer and unprivileged account; the pinned releases are installed. Hermes's pinned, reviewed CLI is now installed dormant under its own non-sudo account. Provider authentication, messaging activation and tool policy remain separate gates; see [private access and provider setup](private-access.md). Do not grant a messaging token before those controls are reviewed. An interactive trusted-operator VM and unattended issue worker have different trust boundaries.
 
 Paperless already has the initial Compose implementation. Immich, n8n and selected media applications should each use the [reusable service contract](../compose/README.md), their own runbook and the then-current official upstream Compose baseline. These later stacks are planned, not implemented or validated. Do not invent image tags, hardware-acceleration paths or NAS exports just to produce runnable YAML.
 

@@ -1,0 +1,37 @@
+---
+- name: Require reviewed Ubuntu platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+      - tailscale_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+- name: Inspect pre-existing Tailscale repository
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/tailscale.list
+  register: tailscale_repo_before
+- name: Install reviewed repository signing key
+  ansible.builtin.get_url:
+    url: https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    checksum: "sha256:{{ tailscale_key_sha256 }}"
+    mode: '0644'
+- name: Configure signed Ubuntu Noble repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/tailscale.list
+    mode: '0644'
+    content: |
+      deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu noble main
+- name: Install exact Tailscale release
+  ansible.builtin.apt:
+    name: "tailscale={{ tailscale_version }}"
+    state: present
+    update_cache: true
+  when: not ansible_check_mode or tailscale_repo_before.stat.exists
+- name: Inspect available services
+  ansible.builtin.service_facts:
+- name: Start client daemon without enrolling or changing tailnet policy
+  ansible.builtin.service:
+    name: tailscaled
+    enabled: true
+    state: started
+  when: not ansible_check_mode or 'tailscaled.service' in ansible_facts.services

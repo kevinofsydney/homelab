@@ -1,0 +1,70 @@
+---
+- name: Require reviewed platform and immutable source
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+      - hermes_commit is match('^[0-9a-f]{40}$')
+- name: Create assistant group
+  ansible.builtin.group:
+    name: hermes
+- name: Install native runtime library required by managed Node
+  ansible.builtin.apt:
+    name: libatomic1
+    state: present
+    update_cache: true
+- name: Create assistant account without administrative groups
+  ansible.builtin.user:
+    name: hermes
+    group: hermes
+    groups: ''
+    append: false
+    shell: /bin/bash
+    password_lock: true
+    create_home: true
+  register: hermes_account
+- name: Restrict assistant home access
+  ansible.builtin.file:
+    path: /home/hermes
+    state: directory
+    owner: hermes
+    group: hermes
+    mode: '0700'
+  when: not ansible_check_mode or not hermes_account.changed
+- name: Create private installer directory
+  ansible.builtin.file:
+    path: /home/hermes/.local/installation
+    state: directory
+    owner: hermes
+    group: hermes
+    mode: '0700'
+  when: not ansible_check_mode or not hermes_account.changed
+- name: Download reviewed installer from immutable official source
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/NousResearch/hermes-agent/{{ hermes_commit }}/scripts/install.sh"
+    dest: /home/hermes/.local/installation/install.sh
+    checksum: "sha256:{{ hermes_installer_sha256 }}"
+    owner: hermes
+    group: hermes
+    mode: '0700'
+  when: not ansible_check_mode or not hermes_account.changed
+- name: Install pinned CLI as assistant without setup or messaging service
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/runuser
+      - -l
+      - hermes
+      - -c
+      - "bash /home/hermes/.local/installation/install.sh --commit {{ hermes_commit }} --dir /home/hermes/.local/hermes-agent --non-interactive --skip-browser --skip-computer-use"
+    creates: /home/hermes/.local/hermes-agent/.hermes-bootstrap-complete
+  when: not ansible_check_mode
+- name: Read installed source identity
+  ansible.builtin.command:
+    argv: [/usr/sbin/runuser, -l, hermes, -c, 'git -C /home/hermes/.local/hermes-agent rev-parse HEAD']
+  register: hermes_source
+  changed_when: false
+  when: not ansible_check_mode
+- name: Verify exact installed commit
+  ansible.builtin.assert:
+    that: hermes_source.stdout == hermes_commit
+  when: not ansible_check_mode

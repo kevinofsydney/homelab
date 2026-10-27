@@ -1,0 +1,7 @@
+---
+- name: Install dormant Hermes CLI in a separate account
+  hosts: development
+  become: true
+  gather_facts: true
+  roles:
+    - hermes_cli
