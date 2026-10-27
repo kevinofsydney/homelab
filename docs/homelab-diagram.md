@@ -1,51 +1,49 @@
-# Homelab topology and resources
+# Homelab topology, resources and addresses
 
-This is a dated snapshot, not a live inventory. Verify actual allocations and state before making changes. Addresses, credentials and export paths belong in ignored site configuration.
+This is a dated reference, not a live inventory. The diagram deliberately uses address placeholders: real addresses remain in ignored `config/site.json`. The local site-specific copy is `.local/homelab-resource-diagram.md`; regenerate and verify its values before using it. Quantities below are configured VM allocations or observed host hardware, not current utilization.
 
 ```mermaid
 flowchart TB
-    Operator["Framework / Titan / trusted devices"]
+    Users["Trusted devices: Framework and Titan<br/>LAN addresses: see site inventory"]
+    Router["Home router<br/>LAN: router address in site inventory"]
     Tailnet["Tailscale private network"]
-    Router["Home router"]
     subgraph Dell["Dell OptiPlex 7000 Micro • Proxmox pve1"]
-        HW["i5-12500T: 6 physical cores / 12 threads<br/>32 GB installed RAM • 512 GB SSD"]
-        subgraph Dev["Development VM 100 • running"]
-            DRes["4 vCPU • 8 GiB RAM • 100 GiB virtual disk"]
-            Tools["Codex CLI • OpenCode • Hermes<br/>CLI tools, not Docker services"]
+        PVE["Proxmox host<br/>Management: PVE LAN address :8006<br/>6 physical cores / 12 threads<br/>32 GB installed RAM • 512 GB SSD"]
+        subgraph Dev["Development VM • VM 100"]
+            DevVM["LAN: dev VM address :22<br/>4 vCPU • 8 GiB RAM<br/>100 GiB virtual SSD"]
+            DevTools["OpenCode • Codex CLI • Hermes<br/>Same VM address (SSH)<br/>Share dev VM CPU / RAM / disk"]
         end
-        subgraph App["Home-services VM 130 • running"]
-            ARes["2 vCPU • 4 GiB RAM • 60 GiB virtual disk"]
-            subgraph Docker["Docker Compose • shared VM resources"]
-                Kuma["Uptime Kuma<br/>private status dashboard"]
-                Paper["Paperless webserver"]
-                DB["PostgreSQL • Paperless database"]
-                Valkey["Valkey • Paperless broker"]
-            end
-            SSD["Local VM disk<br/>database, app state and Kuma data"]
+        subgraph App["Home-services VM • VM 130"]
+            AppVM["LAN: application VM address :22<br/>Tailscale: application VM address<br/>2 vCPU • 4 GiB RAM<br/>60 GiB virtual SSD"]
+            Paper["Paperless webserver<br/>Tailscale address :8000<br/>Shares app VM CPU / RAM<br/>Local state on VM SSD; documents on QNAP"]
+            DB["Paperless PostgreSQL<br/>Internal Docker DNS: db :5432<br/>Shares app VM CPU / RAM / SSD"]
+            Broker["Paperless Valkey<br/>Internal Docker DNS: broker :6379<br/>Shares app VM CPU / RAM / SSD"]
+            Kuma["Uptime Kuma<br/>Tailscale address :3001<br/>Shares app VM CPU / RAM<br/>Database and configuration on VM SSD"]
         end
     end
     subgraph NAS["QNAP TS-264"]
-        PShare["Dedicated Paperless NFS share"]
-        Plex["Existing Plex and media library"]
+        QTS["QNAP management<br/>NAS LAN address :443<br/>CPU / RAM: not independently verified<br/>Volume capacity: see site inventory"]
+        Plex["Existing Plex<br/>NAS LAN address :32400<br/>Shares QNAP CPU / RAM / storage"]
+        Docs["Paperless NFS share<br/>NAS LAN address :2049 (NFSv4)<br/>Documents stored on QNAP volume"]
     end
-    Future["Planned, not deployed:<br/>Immich • website server • other media apps"]
-    Operator --> Tailnet
-    Operator --> Router
-    Tailnet --> Kuma
+    Future["Planned: Immich • website • media apps<br/>No service addresses or allocations yet"]
+    Users --> Router
+    Users --> Tailnet
+    Users --> PVE
+    Users --> DevVM
     Tailnet --> Paper
-    Tailnet -.-> Tools
+    Tailnet --> Kuma
+    DevVM --> DevTools
     Paper --> DB
-    Paper --> Valkey
-    Paper --> PShare
-    Paper --> SSD
-    Kuma --> SSD
-    Kuma -. "HTTP status checks after setup" .-> Paper
-    Future -. "future deployment / resource allocation" .-> App
+    Paper --> Broker
+    Paper --> Docs
+    Kuma -. "HTTP monitor when configured" .-> Paper
+    Future -. "planned" .-> App
 ```
 
-- VM sizes are configured allocations, not dedicated physical cores. The host's CPU and SSD are shared across the VMs and Proxmox; 100 GiB and 60 GiB are virtual disk sizes, not guarantees of free physical SSD capacity.
-- Paperless, its database and broker, and Uptime Kuma have no separate CPU or RAM reservations or limits; they share the 2 vCPUs and 4 GiB of their VM with Ubuntu and Docker. Actual usage changes over time. Kuma data and Paperless's database are on the VM SSD; Paperless's document storage is on QNAP.
-- The development VM has 4 vCPUs and 8 GiB RAM shared by its tools and Ubuntu. CLI login and provider configuration are separate from installation.
-- Both configured VMs have Proxmox `onboot: 0` as observed on 2026-10-27: a VM reboot exercises guest services, but a full Proxmox host reboot will not automatically start these VMs. Changing that requires explicit host-infrastructure approval.
-- Uptime Kuma's dashboard container and private UI are deployed only when confirmed in the service runbook; creating the admin account and configuring monitors are separate steps. The dashboard runs on the same VM as Paperless, so it cannot report an outage while that VM is down.
-- Future applications have no assigned resources yet. Self-hosted n8n and QNAP backups are outside current scope; QNAP Plex and its existing library remain in place. No public ingress is configured by these diagrams.
+- Paperless, PostgreSQL, Valkey and Uptime Kuma have **no individual CPU or memory reservation or limit**. All share the home-services VM's 2 vCPUs and 4 GiB RAM with Ubuntu and Docker. Their disk data grows within the VM SSD allocation or the QNAP volume; there are no separate per-service disk quotas configured. Docker-internal DNS names are not LAN addresses and IPs can change.
+- Development tools share their VM's 4 vCPUs, 8 GiB RAM and 100 GiB virtual disk. Their SSH access is through the VM; they do not have separate service IPs. Tailscale on that VM last reported `NeedsLogin`.
+- VM vCPUs are virtual, not reserved physical cores. Virtual SSD sizes are not guarantees of free physical SSD capacity. The host's CPU, memory and physical SSD are shared across Proxmox and VMs.
+- Both VMs were observed with Proxmox `onboot: 0` on 2026-10-27. A physical host reboot will not automatically start them until that setting is changed with explicit approval. Guest services have separate startup behavior, documented in their runbooks.
+- The QNAP volume's capacity and free space were supplied by the owner in screenshots and may change. NAS CPU/RAM allocations have not been verified. Existing Plex storage remains untouched.
+- The Kuma UI is deployed privately; its initial administrator and HTTP monitor are separate interactive setup steps. It cannot report the application VM's own outage while running on that VM. Planned applications have no verified allocations or addresses. Self-hosted n8n and QNAP backups are outside current scope.
