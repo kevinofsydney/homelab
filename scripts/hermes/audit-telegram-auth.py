@@ -6,7 +6,7 @@ is not an end-to-end gateway, configuration-merging, or Telegram network test.
 """
 import os
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 # Synthetic allowlist; never read or print a real bot token.
 os.environ['TELEGRAM_ALLOWED_USERS'] = '111'
@@ -15,7 +15,10 @@ for key in ('GATEWAY_ALLOWED_USERS', 'GATEWAY_ALLOW_ALL_USERS',
             'TELEGRAM_GROUP_ALLOWED_CHATS'):
     os.environ.pop(key, None)
 
+from gateway.run import GatewayRunner
 from gateway.config import Platform, PlatformConfig
+from gateway.session import SessionSource
+import gateway.authz_mixin as authz
 from plugins.platforms.telegram.adapter import TelegramAdapter
 
 adapter = object.__new__(TelegramAdapter)
@@ -45,6 +48,20 @@ checks = {
     # Tests the adapter's env fallback, not the live runner's injected callback.
     'owner group callback denied': not adapter._is_callback_user_authorized('111', chat_id='-100', chat_type='group'),
 }
+# Exercise the real runner predicate with a synthetic environment-only policy.
+# This bare runner has no adapters or profile routing and is not a live gateway.
+runner = object.__new__(GatewayRunner)
+runner.pairing_store = SimpleNamespace(is_approved=lambda *_args, **_kwargs: False)
+with patch.object(authz, '_auth_env', side_effect=lambda key: '111' if key == 'TELEGRAM_ALLOWED_USERS' else ''):
+    for label, kind, chat_id, user_id, expected in (
+        ('runner owner private allowed', 'dm', '111', '111', True),
+        ('runner stranger private denied', 'dm', '222', '222', False),
+        ('runner owner group denied', 'group', '-100', '111', False),
+    ):
+        source = SessionSource(platform=Platform.TELEGRAM, chat_id=chat_id, chat_type=kind,
+                               user_id=user_id, user_name='synthetic', is_bot=False)
+        checks[label] = runner._is_user_authorized(source) == expected
+
 for name, passed in checks.items():
     print(f"{'PASS' if passed else 'FAIL'}: {name}")
 raise SystemExit(0 if all(checks.values()) else 1)
