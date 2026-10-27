@@ -8,7 +8,7 @@ Read [the supplied blueprint](docs/homelab-blueprint.md) with [the first impleme
 
 The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. Backups, isolation and application deployment are still pending.
 
-A separate [home-services VM](docs/application-vm.md) has Docker packages staged with the daemon stopped. Self-hosted n8n and QNAP backups are outside the current scope until the operator requests them; inactive n8n files remain for possible future use.
+A separate [home-services VM](docs/application-vm.md) runs Docker and private Paperless; see the [live handoff](agents/handoffs/paperless-deployment.md) for its current state and recovery steps. Self-hosted n8n and QNAP backups are outside the current scope until the operator requests them; inactive n8n files remain for possible future use.
 
 For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
 

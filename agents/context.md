@@ -25,6 +25,10 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-27: the owner confirmed they signed in to Paperless. The live administrator count and all three container health checks passed. A Paperless-specific NFSv4 automount entry was applied without stopping the app using `ansible/playbooks/paperless-automount.yml`; the pre-apply check showed one change, the second check returned zero changes, `findmnt --verify` passed, and systemd generated the automount and mount units. This does not prove a reboot: no reboot or NAS-disconnection test was performed. The webserver still has Docker restart policy `no`; after reboot an operator must verify Tailscale and use the existing mount-gated deployment script to start Paperless. See the handoff for commands and caveats.
+
+The startup warning was traced to Paperless's root-mode initialization attempting to inspect/create directories while NFS root squashing maps root to an unprivileged identity and application directories are mode 0700. The running Paperless user can write its directories, and synthetic ingest/OCR was successful. Do not disable root squashing or weaken document permissions simply to hide the warning. A rootless container migration is an untested alternative and was not applied.
+
 2026-10-27: the owner explicitly approved creating a Paperless QNAP share and client-restricted NFS export, mounting it on the application VM, enabling Docker and deploying Paperless privately. See [Paperless deployment handoff](handoffs/paperless-deployment.md) for exact applied state and remaining enrollment/deployment steps. This approval does not cover Immich, existing Plex data, public ingress, n8n or QNAP backups.
 
 

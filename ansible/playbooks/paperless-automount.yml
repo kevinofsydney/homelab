@@ -1,0 +1,47 @@
+---
+- name: Configure a boot-safe Paperless NAS automount
+  hosts: applications
+  become: true
+  gather_facts: false
+  vars:
+    paperless_mountpoint: /mnt/qnap-paperless
+    paperless_fstab_options: rw,_netdev,nofail,x-systemd.automount,x-systemd.mount-timeout=15s
+  tasks:
+    - name: Require a concrete NFS source without whitespace
+      ansible.builtin.assert:
+        that:
+          - paperless_nfs_source is defined
+          - paperless_nfs_source is match('^[A-Za-z0-9_.-]+:/[A-Za-z0-9_./-]+$')
+    - name: Verify the existing live mount is the approved NFS export
+      ansible.builtin.command:
+        argv:
+          - /opt/homelab/scripts/check-mount.sh
+          - "{{ paperless_mountpoint }}"
+          - "{{ paperless_nfs_source }}"
+      check_mode: false
+      changed_when: false
+    - name: Read existing fstab
+      ansible.builtin.slurp:
+        src: /etc/fstab
+      register: paperless_fstab
+    - name: Refuse to replace an existing mount definition
+      ansible.builtin.assert:
+        that:
+          - >-
+            (paperless_fstab.content | b64decode).splitlines()
+            | reject('match', '^\\s*#')
+            | select('search', '^\\S+\\s+/mnt/qnap-paperless\\s+')
+            | reject('equalto', paperless_nfs_source ~ ' ' ~ paperless_mountpoint ~ ' nfs4 ' ~ paperless_fstab_options ~ ' 0 0')
+            | list | length == 0
+        fail_msg: Existing Paperless mount definition differs; inspect it manually.
+    - name: Add the validated automount entry without changing the live mount
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: "{{ paperless_nfs_source }} {{ paperless_mountpoint }} nfs4 {{ paperless_fstab_options }} 0 0"
+        state: present
+        validate: /usr/bin/findmnt --verify --tab-file %s
+      notify: Reload systemd mount definitions
+  handlers:
+    - name: Reload systemd mount definitions
+      ansible.builtin.systemd_service:
+        daemon_reload: true
