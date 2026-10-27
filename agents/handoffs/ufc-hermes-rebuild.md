@@ -34,7 +34,7 @@ Before cloning, re-check SSD free space and RAM against `docs/architecture.md` (
 
 ## Fixed rules carried over
 
-- Never access, inspect or modify legacy workflows, tables or credentials in n8n. Use only the 14 workflow IDs below; never select by the `UFC | ` name prefix.
+- Scope n8n work to the 14 UFC workflow IDs below. On 2026-10-27 the operator reported that every other workflow in the instance is archived and only these UFC workflows remain active, so no other workflow needs to be filtered out. The ID allowlist stays as least privilege for the UFC gateway and Hermes skill; add a new UFC workflow to `policy.json` before agents use it.
 - Never print secrets or ask for them in chat; never commit them. The operator enters each one on the guest through a hidden-input helper. Report name, set/unset and length only.
 - Do not change the operator's local `ufc_dashboard` repository. Put the new UFC agent source in its own private repository only if the operator asks.
 - Hermes gets no root, sudo, `docker` group, `/etc/ufc-agent` access, gateway token, or ability to edit the gateway or policy.
@@ -74,7 +74,7 @@ The earlier session tested the code against live UFC.com and ESPN data with a ch
 
 ## Approved UFC workflow allowlist
 
-n8n project `<n8n-project-id>`, UFC folder `<n8n-folder-id>`. These IDs are the authoritative boundary for the gateway policy, the Hermes skill and "Available in MCP". No legacy workflow may be available in MCP, and auto-expose of new workflows stays off; the operator confirms both, since agents must not look at legacy.
+n8n project `<n8n-project-id>`, UFC folder `<n8n-folder-id>`. These IDs are the authoritative list for the gateway policy, the Hermes skill and "Available in MCP". Keep auto-expose of new workflows off.
 
 | Workflow | ID |
 | --- | --- |
@@ -101,9 +101,9 @@ All old values were on the destroyed disk; treat them as exposed. The operator c
 | --- | --- | --- |
 | UFC bot Telegram token (`the UFC bot`) | ufc-agent | BotFather → Revoke current token |
 | Hermes Telegram token (`the Hermes bot`) | hermes | BotFather → Revoke current token |
-| OpenRouter key (UFC) | ufc-agent | US$5/month provider limit; delete old key |
-| OpenRouter key (Hermes) | hermes | US$10 limit; delete old key |
-| OpenCode Go key(s) | both | Extra usage disabled |
+| OpenRouter key (UFC) | ufc-agent | Old key revoked 2026-10-27; new key with US$5/month provider limit |
+| OpenRouter key (Hermes) | hermes | Old key revoked 2026-10-27; new key with US$10 limit |
+| OpenCode Go key(s) | both | Old key revoked by the operator on 2026-10-27; create new key(s) with Extra usage disabled |
 | DeepSeek key | hermes | Delete old key |
 | GitHub fine-grained PAT | hermes | All repositories, Contents and Pull requests read/write only, ≤90 days. Note: broader than `agents/permissions.md` recommends for workers; the operator approved it for Hermes |
 | n8n MCP token | hermes | JWT with `aud: mcp-server-api`; reject `oc_…` and `aud: public-api` |
@@ -120,8 +120,8 @@ Install with the existing role (`ansible/playbooks/assistant-tools.yml`) on the 
 - Rootless Docker for `hermes` only; no root daemon (`docker.service`, `docker.socket`, `containerd.service` disabled); `DOCKER_HOST=unix:///run/user/<uid>/docker.sock`; slirp4netns with `--disable-host-loopback`. Note the repository's `docker_staged` role installs rootful Docker CE and must not be reused unchanged.
 - `hermes config set` values: model `opencode-go` / `deepseek-v4.1-flash` (verify the ID against the Go catalog); terminal backend `docker` with a `nousresearch/hermes-sandbox` tag pinned to the Hermes release, `docker_forward_env: [GITHUB_TOKEN]`, volume `/home/hermes/workspaces:/workspace/projects`, no extra args, no cwd mount, not host user, non-persistent containers, 2 CPU, 4096 MB, timeout 900; approvals `manual`, timeout 300, deny force-push, `+refspec` push, branch deletion and `curl|sh`/`wget|sh`; checkpoints on; secret redaction on; telemetry off; skills from `/etc/hermes-skills`.
 - `.env` non-secret values: `TELEGRAM_ALLOWED_USERS` and `GATEWAY_ALLOWED_USERS` = `OWNER_TELEGRAM_ID`. Never set `GATEWAY_ALLOW_ALL_USERS`.
-- n8n MCP server `${N8N_BASE_URL}/mcp-server/http` with `Authorization: Bearer ${N8N_MCP_TOKEN}`, timeout 120, connect 30, and exactly these 17 of 58 tools: `get_workflow_details`, `get_workflow_history`, `get_workflow_version`, `get_workflow_versions_diff`, `get_workflow_execution`, `update_workflow`, `restore_workflow_version`, `prepare_workflow_pin_data`, `test_workflow`, `publish_workflow`, `execute_workflow`, `search_nodes`, `get_node_types`, `get_workflow_sdk_reference`, `get_workflow_best_practices`, `validate_workflow`, `validate_node_config`. Excluded on purpose: `search_workflows` and `search_workflow_executions` (can expose legacy), instance/project/folder/tag tools, credentials, data tables, n8n Agent tools, create/archive/move and `unpublish_workflow`. The operator approved Hermes publishing and executing UFC workflows on its own.
-- `ufc-n8n` skill: `/usr/local/sbin/hermes-ufc-skill-sync` (root 755) generates `/etc/hermes-skills/ufc-n8n/SKILL.md` (root 644) from `policy.json`, triggered by a systemd `.path` unit on `PathChanged=/etc/ufc-agent/policy.json`. On separate guests, sync the allowlist through a reviewed copy instead (Hermes must still not read `/etc/ufc-agent`). Content: frontmatter `name: ufc-n8n`, description starting "REQUIRED for any n8n or UFC workflow task", `platforms: [linux]`; the 14-row table with `\|` escaped; no search, never guess IDs, never touch legacy; rules: read first (`get_workflow_details`, `get_workflow_history`, `get_workflow_execution`), edit drafts with `update_workflow`, validate and test before publishing, note the previous published version, report diff and new/rollback version IDs, roll back with `restore_workflow_version` + `publish_workflow` and never unpublish, `execute_workflow` only when asked or to confirm a fix, keep the `UFC | ` prefix and add no new credentials.
+- n8n MCP server `${N8N_BASE_URL}/mcp-server/http` with `Authorization: Bearer ${N8N_MCP_TOKEN}`, timeout 120, connect 30, and exactly these 19 of 58 tools: `get_workflow_details`, `get_workflow_history`, `get_workflow_version`, `get_workflow_versions_diff`, `get_workflow_execution`, `update_workflow`, `restore_workflow_version`, `prepare_workflow_pin_data`, `test_workflow`, `publish_workflow`, `execute_workflow`, `search_nodes`, `get_node_types`, `get_workflow_sdk_reference`, `get_workflow_best_practices`, `validate_workflow`, `validate_node_config`, `search_workflows`, `search_workflow_executions`. The two search tools were excluded on the VPS only to hide workflows that are now archived; the operator lifted that restriction on 2026-10-27. Still excluded: instance/project/folder/tag tools, credentials, data tables, n8n Agent tools, create/archive/move and `unpublish_workflow`. The operator approved Hermes publishing and executing UFC workflows on its own.
+- `ufc-n8n` skill: `/usr/local/sbin/hermes-ufc-skill-sync` (root 755) generates `/etc/hermes-skills/ufc-n8n/SKILL.md` (root 644) from `policy.json`, triggered by a systemd `.path` unit on `PathChanged=/etc/ufc-agent/policy.json`. On separate guests, sync the allowlist through a reviewed copy instead (Hermes must still not read `/etc/ufc-agent`). Content: frontmatter `name: ufc-n8n`, description starting "REQUIRED for any n8n or UFC workflow task", `platforms: [linux]`; the 14-row table with `\|` escaped; use only the listed IDs; rules: read first (`get_workflow_details`, `get_workflow_history`, `get_workflow_execution`), edit drafts with `update_workflow`, validate and test before publishing, note the previous published version, report diff and new/rollback version IDs, roll back with `restore_workflow_version` + `publish_workflow` and never unpublish, `execute_workflow` only when asked or to confirm a fix, keep the `UFC | ` prefix and add no new credentials.
 - Gateway: `hermes gateway install` as a user service; cap `user-<uid>.slice` (for example `MemoryMax` ≈60% of guest RAM, `CPUWeight=40`, `TasksMax=2048`).
 
 ## UFC agent specification
@@ -140,7 +140,7 @@ No source survived; write it fresh, Python standard library only, with tests fir
 
 ## Verification (report results, never values)
 
-Secrets set by length only; Telegram `getMe` for both bots (never `getUpdates` while a service polls); OpenRouter `/api/v1/key` limits; DeepSeek `/user/balance`; OpenCode Go model list and a 1-token completion; GitHub `/user` fine-grained with push, and Actions secrets, `/hooks`, `/user/keys` return 403; n8n API key reads a UFC workflow; MCP `initialize`, `tools/list` = 58, `get_workflow_details` on all 14 IDs matches policy, a made-up ID is refused, `hermes mcp list` shows 17 selected (mind the ~100-request MCP rate limit). Isolation: hermes cannot read UFC secrets; sandboxes cannot reach the LAN, Proxmox, QNAP or the gateway; no root Docker daemon; the bot unit has no `n8n.key`. UFC tests pass, then live `/status`, `/workflows`, `/balance` and a non-owner negative check. A test message to the Hermes bot works.
+Secrets set by length only; Telegram `getMe` for both bots (never `getUpdates` while a service polls); OpenRouter `/api/v1/key` limits; DeepSeek `/user/balance`; OpenCode Go model list and a 1-token completion; GitHub `/user` fine-grained with push, and Actions secrets, `/hooks`, `/user/keys` return 403; n8n API key reads a UFC workflow; MCP `initialize`, `tools/list` = 58, `get_workflow_details` on all 14 IDs matches policy, a made-up ID is refused, `hermes mcp list` shows 19 selected (mind the ~100-request MCP rate limit). Isolation: hermes cannot read UFC secrets; sandboxes cannot reach the LAN, Proxmox, QNAP or the gateway; no root Docker daemon; the bot unit has no `n8n.key`. UFC tests pass, then live `/status`, `/workflows`, `/balance` and a non-owner negative check. A test message to the Hermes bot works.
 
 ## Backups
 
@@ -155,8 +155,8 @@ QNAP backups are out of scope by earlier operator instruction, but this rebuild 
 5. Policy values marked †, timezone, and `N8N_BASE_URL` / `OWNER_TELEGRAM_ID` in ignored site configuration.
 6. Backup destination, and whether to bring backups back into scope for these guests.
 7. Whether the UFC agent source gets its own private GitHub repository.
-8. Operator confirmation of the n8n "Available in MCP" settings.
+8. Operator confirmation that the 14 UFC workflows are marked "Available in MCP" and auto-expose is off.
 
 ## Coordination and approval
 
-The supplied handoff records operator approvals from the earlier session for the n8n fix content, the 17-tool MCP scope and Hermes publishing UFC workflows. This repository has no approval yet to create guests, change the Proxmox firewall, enable autostart, install services, load credentials, publish n8n workflows or send Telegram messages. A handoff is not authorization.
+The supplied handoff records operator approvals from the earlier session for the n8n fix content, the MCP tool scope (widened to 19 tools on 2026-10-27) and Hermes publishing UFC workflows. This repository has no approval yet to create guests, change the Proxmox firewall, enable autostart, install services, load credentials, publish n8n workflows or send Telegram messages. A handoff is not authorization.
