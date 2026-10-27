@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: installed `/usr/local/bin/hermes-secret` on VM 101 through the reviewed Ansible helper playbook. Its final check returned `ok=1 changed=0 failed=0`, and owner/group/mode were `root root 755`. The helper prompts in a terminal, does not put secrets in arguments and writes a private Hermes dotenv file only when run by `hermes`; no token or owner ID was entered. See [credential setup](../docs/hermes-credential-setup.md). Read-only sandbox checks found no Docker, `newuidmap` or `slirp4netns`; `hermes` has subordinate UID/GID ranges but no lingering user manager. The rootless sandbox, public-destination allowlist, gateway supervision and authorization acceptance remain outstanding.
+
+
 2026-10-28: installed dormant Hermes CLI v0.22.5 at pinned commit `bf0203a794a07aac3ff764972ab9087baa4e4f4e` on VM 101 under non-sudo `hermes` (only its own group). The first Ansible apply created the account and native dependency but hit GitHub HTTP 429 fetching the installer. The local cached installer at the pinned source commit matched the role's SHA-256 and was staged on the guest; the subsequent apply succeeded (`ok=11 changed=1 failed=0`) and verified the source commit. `hermes --version` succeeded; no Hermes process or service unit was found. No provider or Telegram credentials, gateway or n8n integration were configured. Stronger public-destination isolation, sandbox tests and reboot acceptance remain pending.
 
 

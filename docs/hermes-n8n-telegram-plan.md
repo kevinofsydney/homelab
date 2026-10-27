@@ -37,6 +37,8 @@ Host-enforced, outside the agent's control, following the pattern proven on the 
 
 ## Credentials
 
+An interactive [credential helper](hermes-credential-setup.md) is installed but has not been used. Do not enter tokens until the isolation gates below are complete.
+
 | Secret | Scope | Notes |
 | --- | --- | --- |
 | GitHub App installation token | This repository only, contents + pull requests | Short-lived and revocable per installation; no Actions, workflow or secret administration |
