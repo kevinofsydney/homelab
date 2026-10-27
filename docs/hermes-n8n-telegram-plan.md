@@ -1,6 +1,6 @@
 # Hermes agent with Telegram, Git and n8n MCP: deployment plan
 
-Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created and started, with Proxmox autostart enabled.** No guest firewall policy, bot, provider credential or service has been configured; subsequent infrastructure and firewall changes require approval. Workflow IDs and prior requirements remain in the [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md); self-hosted n8n and QNAP backups stay out of scope.
+Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created and started, with Proxmox autostart enabled.** An initial guest firewall policy is applied and partially verified; no bot, provider credential or Hermes service has been configured; subsequent infrastructure and firewall changes require approval. Workflow IDs and prior requirements remain in the [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md); self-hosted n8n and QNAP backups stay out of scope.
 
 ## Decisions
 
@@ -22,11 +22,11 @@ The owner talks to one agent over Telegram and it: clones and pulls repositories
 
 A dedicated guest (next unused VM ID) cloned from the proven Ubuntu 24.04.5 template — not the development VM and not the application VM. Proposed 4 vCPU / 8 GiB / 80 GiB, confirmed against real capacity first; with 8 GiB on VM 100 and 4 GiB on VM 130 that leaves roughly 12 GiB of the host's 32 GiB for Proxmox.
 
-The plan-first `scripts/clone-application-vm.sh` supports explicit `APP_VM_CORES`, `APP_VM_MEMORY_MIB` and `APP_VM_DISK_GIB` values; defaults remain 2 vCPU / 4 GiB / 60 GiB. For the proposed allocation use `4`, `8192` and `80` respectively. Its capacity check uses the requested disk size; separately verify live host memory and storage capacity before applying. It leaves the VM stopped and autostart disabled. `ansible/playbooks/hermes-agent.yml` prepares the existing pinned CLI in a separate non-administrative account on Ubuntu 24.04; it does not configure credentials or start a gateway. VM 101 (`hermes-agent`) was cloned on 2026-10-28 with 4 vCPU, 8192 MiB RAM and an 80 GiB virtual disk. It is running with `onboot: 1` and `startup: order=3`; the serial console reached the login prompt. The QEMU guest agent did not respond during initial checks, and guest identity, isolation and CLI installation remain pending. No guest-specific firewall policy is installed. Further infrastructure and firewall changes require operator approval.
+The plan-first `scripts/clone-application-vm.sh` supports explicit `APP_VM_CORES`, `APP_VM_MEMORY_MIB` and `APP_VM_DISK_GIB` values; defaults remain 2 vCPU / 4 GiB / 60 GiB. For the proposed allocation use `4`, `8192` and `80` respectively. Its capacity check uses the requested disk size; separately verify live host memory and storage capacity before applying. It leaves the VM stopped and autostart disabled. `ansible/playbooks/hermes-agent.yml` prepares the existing pinned CLI in a separate non-administrative account on Ubuntu 24.04; it does not configure credentials or start a gateway. VM 101 (`hermes-agent`) was cloned on 2026-10-28 with 4 vCPU, 8192 MiB RAM and an 80 GiB virtual disk. It is running with `onboot: 1` and `startup: order=3`; the serial console reached the login prompt. The guest identity was verified and the QEMU guest agent is active. An initial guest-specific firewall policy is applied and partially tested; the stronger isolation and CLI installation remain pending. Further infrastructure and firewall changes require operator approval.
 
 ## Isolation
 
-A concrete [initial VM policy proposal](hermes-isolation-preparation.md) is prepared for review. It is not applied and does not implement the public-destination allowlist described below.
+A concrete [initial VM policy proposal](hermes-isolation-preparation.md) is prepared for review. The initial policy is applied and partially tested, but does not implement the public-destination allowlist described below.
 
 Host-enforced, outside the agent's control, following the pattern proven on the development VM on 2026-10-27 (host firewall applied, VM blocked from private addresses, verified after a reboot; see [dev VM isolation plan](dev-vm-isolation-plan.md)):
 

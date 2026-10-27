@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: owner approved the Hermes VM-specific initial firewall. Guest SSH identity was verified from a read-only disk mapping and the missing QEMU guest agent was installed; cloud-init is done and Proxmox guest-agent ping succeeds. The initial private-network and IPv6 egress restrictions were applied with a VM-only timed rollback, and the live rejection counters, DNS, public HTTPS, DHCP renewal, operator SSH and existing application health were checked. The timer was cancelled after these initial checks. Agent sandbox and reboot tests, and the stronger public-destination allowlist, are not yet complete. The operator computer could not reach Paperless over Tailscale, though Paperless and Kuma were healthy and returned 302 from their own VM. See [firewall evidence](../docs/hermes-isolation-preparation.md). No Hermes gateway or credentials were configured.
+
+
 2026-10-28: prepared a [review-only initial Hermes VM isolation policy](../docs/hermes-isolation-preparation.md) and acceptance/rollback plan. It is not deployed. It blocks private ranges and IPv6 egress but permits arbitrary public IPv4; it is not the stronger public-destination allowlist in the Hermes plan. The Proxmox host firewall remains unfiltered, and VM 101 has no VM-specific firewall policy. The guest serial console reached login but QEMU guest agent remains nonresponsive; verify guest identity before SSH administration.
 
 

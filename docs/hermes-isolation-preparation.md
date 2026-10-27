@@ -1,6 +1,6 @@
 # Hermes VM isolation: proposed initial boundary
 
-Status: **prepared for review, not deployed or tested**. The owner requested a Telegram-connected Hermes agent. VM 101 is running with Proxmox autostart enabled; as of 2026-10-28 no VM-specific policy is installed, the guest agent does not respond, and no assistant gateway or credentials are configured. Do not activate the agent before verifying isolation.
+Status: **initial VM-specific policy applied and partially verified on 2026-10-28** with owner approval. VM 101 is running with Proxmox autostart enabled. The guest agent was installed and Proxmox can communicate with it. No assistant gateway or credentials are configured. The stronger public-destination allowlist and sandbox verification remain outstanding.
 
 The review-only [example](../proxmox/firewall/hermes.fw.example) uses the existing development VM's IPv4 private-range restriction as a starting point: permit DHCP and the verified router's DNS, reject private, link-local and carrier-grade NAT destinations, and reject IPv6 egress. Inbound is unchanged so trusted operator SSH remains possible. Replace the router placeholder from ignored site inventory only after verification. Do not paste the example directly into Proxmox.
 
@@ -15,3 +15,11 @@ The review-only [example](../proxmox/firewall/hermes.fw.example) uses the existi
 5. Test a guest reboot after installation and an owner-approved host reboot at an appropriate time. Verify firewall enforcement, VM autostart, service restart and a usable Telegram response. Configuration flags alone do not prove recovery.
 
 The example is not a generic sandbox, a public endpoint allowlist, or proof that the setup is safe. Check rules against the running Proxmox version, router and actual VM networks before applying.
+
+## Applied evidence and limits (2026-10-28)
+
+The owner approved the VM-specific policy and timed rollback. The guest public host key was read from its virtual disk via a temporary read-only loop mapping, then matched against its SSH key and the mapping was removed. Cloud-init reported done. Installed `qemu-guest-agent` on the guest; the service is active and Proxmox guest-agent ping and network inventory worked. Its unit reports `static`; do not interpret this as boot persistence evidence. The observed DHCP address and verified key are recorded in ignored site inventory and known-hosts; a DHCP reservation is not verified.
+
+The rendered example was installed only as `/etc/pve/firewall/101.fw`, after arming a ten-minute systemd rollback that would remove only that file. Compiled and installed IPv4/IPv6 chains contained the intended rules. From the guest, TCP connections to Proxmox, QNAP, router administration, home-services and a CGNAT address returned connection errors, with Proxmox rejection counters incrementing for LAN and CGNAT. A root test to Proxmox was also rejected, and a link-local IPv6 connection to the host failed. Router DNS resolved GitHub, public HTTPS returned 200, a DHCP renewal retained the address, and a new operator SSH connection worked. Proxmox and the two pre-existing VMs remained accessible; both application units were active, all four containers reported healthy, and their local Tailscale-bound endpoints returned 302. A direct check from the operator computer to Paperless timed out, so external tailnet reachability is **not** verified.
+
+The rollback timer was stopped after these initial checks; the policy remains in place. Agent-account and sandbox tests cannot yet be performed because the assistant and sandbox are not installed. The public-destination allowlist is not implemented; neither the VM firewall nor guest-agent recovery has been verified after reboot. To roll back this initial policy, remove only `/etc/pve/firewall/101.fw` and verify Proxmox applies the resulting rules; do not disable the shared firewall. Further agent activation requires the stronger isolation and credential gates in the Hermes plan.
