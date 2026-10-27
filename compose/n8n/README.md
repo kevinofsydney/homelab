@@ -1,10 +1,12 @@
 # Private n8n staging stack
 
+**Outside current scope:** The operator chose to continue using cloud n8n and will raise self-hosting when ready. These files are retained inactive; do not deploy, start, schedule or seek approval for n8n until the operator requests it again.
+
 This is staged, not running. It uses the [official n8n Docker configuration](https://docs.n8n.io/deploy/host-n8n/install-options/install-with-docker.md) as its baseline, with a verified immutable stable image, SQLite data on the app VM's SSD and no public webhooks. Its loopback-only port is intended for an authenticated SSH tunnel. It does not include the optional n8n Assistant sandbox or a privileged Docker-in-Docker container.
 
 The Compose file binds `/srv/n8n/data` to `/home/node/.n8n` with `create_host_path: false`; the staged role requires a local filesystem, a non-symlinked data path and the image's expected numeric UID/GID 1000. n8n normally generates and stores its encryption key in that directory alongside its database. Do not delete, replace or lose that key: encrypted credentials depend on it. The operator deferred QNAP backups; no backup or restore has been verified. Treat loss of the VM/disk as potential loss of the database, workflows, credentials and encryption key.
 
-The daemon and socket remain disabled pending explicit approval of Docker's guest bridge/firewall changes. After approval, enable Docker on the application VM, then run `/opt/homelab/n8n/deploy-n8n.sh` for validation and `--apply` to pull/start the pinned image. The wrapper checks the existing data directory and filesystem and refuses to start a container if Docker is inactive. It defaults to a plan. The container has no automatic restart in this first phase; the VM itself also has autostart disabled.
+The daemon and socket were left disabled. Only if the operator requests self-hosted n8n again, review the release and fresh deployment plan, including explicit approval for Docker's guest bridge/firewall changes. The retained wrapper checks the existing data directory and filesystem and refuses to start a container if Docker is inactive. It defaults to a plan. The container has no automatic restart in this preparation; the VM itself also has autostart disabled.
 
 Before use, check the running container, `curl -fsS http://127.0.0.1:5678/healthz` locally and confirm port 5678 is not reachable through the guest's LAN address. From an authorized Windows operator computer, open an SSH tunnel to the observed app VM address:
 

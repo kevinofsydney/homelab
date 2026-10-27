@@ -1,5 +1,7 @@
 # Home-services VM and n8n staging
 
+**Current scope:** On 2026-10-27 the operator removed self-hosted n8n and QNAP backups from the current deployment and will raise them when ready. The existing inactive n8n files are retained as historical preparation; do not start the container or request its activation until the operator brings it back into scope. The VM and stopped Docker installation remain available for other separately approved application work.
+
 ## Current deployment
 
 On 2026-10-27 the operator asked to continue deployment and deferred QNAP backups. A separate application VM was created from the existing verified Ubuntu template: VM 130, 2 vCPU, 4096 MiB RAM and 60 GiB virtual disk. Its guest is Ubuntu 24.04.5, cloud-init completed, the disk expanded, and the guest agent responds. The three approved operator public keys were provided through cloud-init; key-only `devops` SSH is enabled. VM autostart remains off. Its observed DHCP address and console-verified host key are in ignored site inventory and known-hosts files, not this document.
@@ -12,9 +14,9 @@ The QNAP address supplied by the operator is recorded in ignored configuration. 
 
 ## Reviewable Docker activation
 
-Docker's default Linux bridge setup creates network interfaces, forwarding behavior and firewall rules **inside the application VM**. Its [official documentation](https://docs.docker.com/engine/network/packet-filtering-firewalls/) describes those changes and notes that published ports can bypass ordinary UFW filtering. The project requires explicit approval before network/firewall changes. Starting the staged daemon therefore awaits the operator's approval. The planned first application binds only `127.0.0.1:5678`; no router port forward, Proxmox network change, public ingress, Tailscale policy change or QNAP change is part of this activation.
+Docker's default Linux bridge setup creates network interfaces, forwarding behavior and firewall rules **inside the application VM**. Its [official documentation](https://docs.docker.com/engine/network/packet-filtering-firewalls/) describes those changes and notes that published ports can bypass ordinary UFW filtering. The project requires explicit approval before network/firewall changes. Future activation for an in-scope application needs a reviewed plan and explicit approval. The previous request to activate n8n is superseded by the operator's deferral.
 
-After that approval, a trusted operator can enable/start `docker.socket` and `docker.service` in the app VM, then review the local `n8n` deployment wrapper's plan and use `--apply`. Verify Docker's actual rules and forwarding changes, `docker compose ps`, local health, refusal of LAN access to port 5678, and an operator SSH tunnel. Do not use Docker activation as authorization for future network, NAS or production changes. The staged Docker playbook refuses to stop an already-running daemon; do not rerun it after activation as a way to manage an active service.
+If the operator later requests self-hosted n8n, review the pinned release and prepare a fresh plan before requesting any applicable approval. The retained n8n procedure binds only to loopback, and includes checks for local health, LAN access rejection and an operator SSH tunnel. Do not use Docker activation as authorization for future network, NAS or production changes. The staged Docker playbook refuses to stop an already-running daemon; do not rerun it after activation as a way to manage an active service.
 
 See [n8n staging](../compose/n8n/README.md) for client access, owner setup, data placement and recovery limitations. n8n account creation and authenticated behavior remain unverified until the user completes setup.
 

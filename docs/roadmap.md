@@ -6,7 +6,7 @@ The first milestone is deliberately small enough to verify on the 32 GB / 512 GB
 | --- | --- | --- |
 | Paperless-ngx | PostgreSQL/index on SSD; media on dedicated QNAP export | Stack staged in `compose/paperless/`; test NFS, backup and restore |
 | Immich | PostgreSQL/cache on SSD; originals on dedicated QNAP export | Use current upstream Compose as baseline, verify hardware transcoding and upload/backup behavior |
-| n8n | DB/config on SSD; private editor | Staged in the separate application VM; Docker firewall activation awaits approval, followed by owner setup, isolation and recovery review |
+| n8n | Existing cloud service | Self-hosting is out of scope until the operator requests it; staged files are inactive |
 | Audiobookshelf | Media read-only on QNAP; metadata/config on SSD | Verify ownership, library scan and backup |
 | Ebook server | Books read-only on QNAP; config on SSD | Choose Kavita or alternative after current release review |
 | Uptime Kuma | Config on SSD; private UI | Telegram alert credentials scoped to notifications |
