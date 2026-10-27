@@ -1,0 +1,16 @@
+[Unit]
+Description=Start Paperless after private access and NAS verification
+Wants=network-online.target docker.service tailscaled.service
+After=network-online.target docker.service tailscaled.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/homelab/scripts/start-paperless-when-ready.sh
+TimeoutStartSec=180
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

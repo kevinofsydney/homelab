@@ -1,7 +1,7 @@
 # Task: Complete the private Paperless deployment
 
 Updated: 2026-10-27
-Status: running; NAS-loss validation pending
+Status: automatically starts after reboot; NAS-loss validation pending
 Branch or worktree: `codex/paperless-live` in the project checkout; confirm current branch and PR before editing.
 Base/current commit: inspect `git log -1` and the PR before continuing.
 PR: inspect the current open PR; source review and CI do not imply live application health.
@@ -27,9 +27,13 @@ Verify current state before continuing. Last live checks: `findmnt -n -M /mnt/qn
 
 1. Check `tailscale status --json` on the app VM. If enrollment is lost, run `sudo tailscale up --accept-dns=false --accept-routes=false --ssh=false --timeout=...` and ask the operator to open its fresh URL; do not store the URL. Confirm the private IP and tailnet authorization before binding Paperless. Do not expose the app on the LAN as a shortcut.
 2. Review the root-squashed initialization warnings before attempting any container-mode changes; verify continued ingest/OCR after any remediation. Recheck mount source, ownership and write/read/delete as the selected UID. The database and broker are on the SSD. Never print or commit the guest-only `.env` secrets.
-3. The operator confirmed administrator login. Verify access from an authorized client, rejection from an unauthorized path, document ingest/OCR, and behavior when the NAS is unavailable. The automount was tested after the requested reboot. The webserver intentionally has no Docker restart policy. After a reboot, check Tailscale is running and then run `sudo /opt/homelab/scripts/deploy-paperless.sh` followed by the same command with `--apply` to trigger the automount, verify its exact source and start the stack. Never start the webserver without that check. Document that no backup has been validated.
+3. The operator confirmed administrator login. Verify access from an authorized client, rejection from an unauthorized path, document ingest/OCR, and behavior when the NAS is unavailable. The automount was tested after the requested reboot. The webserver intentionally retains Docker restart policy `no`. The enabled `homelab-paperless.service` verifies the Tailscale bind and invokes the mount-gated deployment automatically after boot, retrying failed starts every 30 seconds. Check `systemctl status homelab-paperless.service`, `journalctl -u homelab-paperless.service -b`, and `sudo docker ps` for problems. The unit is a startup action, not a runtime health or NAS-loss monitor. Never start the webserver without the mount check. Document that no backup has been validated.
 4. Update shared context and runbooks with results, verify any changes, create a PR and follow the standing merge rule.
 
 ## Coordination and approval
 
 The owner approved this specific Paperless and NFS/Docker work on 2026-10-27; do not request duplicate approval for that scope. The owner deferred OpenCode login, self-hosted n8n and QNAP backups. Approval does not extend to other apps, unrelated NAS shares, production secrets outside this deployment, public ingress or new networking scope.
+
+## Automatic startup verification (2026-10-27)
+
+The owner requested automation because reboots are likely. Applied `ansible/playbooks/paperless-autostart.yml`; systemd unit verification passed and the service was enabled. Unit tests cover Tailscale offline, wrong bind, non-tailnet bind and propagation of deployment-gate failure; separate mount-gate tests cover wrong or covered exports. After a real VM reboot, the enabled unit ran automatically, verified the NFS mount, waited for healthy PostgreSQL and Valkey, and started the Paperless webserver with its configured private bind. All three containers subsequently reported healthy, the private endpoint returned HTTP 302, and the LAN HTTP probe was rejected. The post-apply Ansible check returned zero changes (three service-related tasks deliberately skipped in check mode). Service `active` means its startup action succeeded; it is not proof of continued container health. Verify current status and HTTP separately. A physical NAS-loss/recovery test and tailnet policy denial test are still outstanding; do not claim those passed. No QNAP backups or n8n were enabled.

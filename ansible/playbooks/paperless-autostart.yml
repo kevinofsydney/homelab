@@ -1,0 +1,38 @@
+---
+- name: Install the gated Paperless boot service
+  hosts: applications
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Verify the existing Paperless mount and configuration
+      ansible.builtin.command: /opt/homelab/scripts/deploy-paperless.sh
+      check_mode: false
+      changed_when: false
+    - name: Install private-access and mount-gated startup wrapper
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../scripts/start-paperless-when-ready.sh"
+        dest: /opt/homelab/scripts/start-paperless-when-ready.sh
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Install systemd unit
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../systemd/homelab-paperless.service"
+        dest: /etc/systemd/system/homelab-paperless.service
+        owner: root
+        group: root
+        mode: '0644'
+      register: paperless_unit
+    - name: Validate the installed unit before enabling it
+      ansible.builtin.command: systemd-analyze verify /etc/systemd/system/homelab-paperless.service
+      changed_when: false
+      when: not ansible_check_mode
+    - name: Reload unit definitions when changed
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: paperless_unit.changed and not ansible_check_mode
+    - name: Enable automatic startup without restarting the live app
+      ansible.builtin.systemd_service:
+        name: homelab-paperless.service
+        enabled: true
+      when: not ansible_check_mode
