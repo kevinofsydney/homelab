@@ -14,15 +14,29 @@ For the development VM, use versioned CLI installs and preserve previous local p
 
 ## Automatic package updates
 
-Both guests use Ubuntu's shipped `unattended-upgrades`, enabled through `apt-daily.timer`, `apt-daily-upgrade.timer` and `/etc/apt/apt.conf.d/20auto-upgrades`. It installs from the release and security pockets only, so third-party repositories such as Docker and Tailscale are never upgraded automatically, and automatic reboot stays off: a kernel update leaves `/var/run/reboot-required` for the operator to act on.
+Both guests use Ubuntu's shipped `unattended-upgrades`, driven by `apt-daily.timer` (index refresh) and `apt-daily-upgrade.timer` (install), with `/etc/apt/apt.conf.d/20auto-upgrades` enabling both. Drop-ins under `/etc/systemd/system/*.timer.d/` retime them to 02:30 and 03:00 `Australia/Sydney`; the guests keep `Etc/UTC` clocks and systemd resolves the timezone name, so the local hour holds across daylight saving.
+
+Origins that are installed automatically:
+
+- Ubuntu release, security and ESM pockets — the package default.
+- Tailscale, through `/etc/apt/apt.conf.d/51unattended-upgrades-tailscale`: `o=Tailscale,a=resolute` on the development VM, `o=Tailscale,a=noble` on the application VM.
+- **Docker is deliberately excluded.** Engine updates stay a reviewed, manual action on a host running stateful containers.
+
+A `tailscaled` restart during an update is transparent in practice: it was tested on the application VM and the private address, `:8000`/`:3001` bindings, both endpoint responses and all containers were unchanged.
+
+Automatic reboot stays off, so a kernel update leaves `/var/run/reboot-required` for the operator to act on.
+
+Use `Unattended-Upgrade::Origins-Pattern` for additions, never `Allowed-Origins` with `o=…,a=…` entries: the legacy parser expects `Origin:Suite` and crashes the whole updater, silently stopping every automatic update.
 
 Check it without changing anything:
 
 ```bash
 systemctl list-timers 'apt-daily*'
 sudo tail -n 20 /var/log/unattended-upgrades/unattended-upgrades.log
-sudo unattended-upgrade --dry-run
+sudo unattended-upgrade --dry-run --debug | grep -i 'allowed origins'
 cat /var/run/reboot-required /var/run/reboot-required.pkgs 2>/dev/null
 ```
+
+Roll back a bad Tailscale release with `sudo apt-get install tailscale=<previous version>` — the upstream repository keeps its history.
 
 This covers guest OS packages only. It does not update Paperless, n8n or any other pinned container image — those follow the application procedure above, which performs the digest review, Compose validation and restore checks that a package upgrade cannot.
