@@ -1,0 +1,13 @@
+name: uptime-kuma
+services:
+  uptime-kuma:
+    image: ${KUMA_IMAGE:?Set reviewed immutable image}
+    restart: "no"
+    ports:
+      - "${KUMA_BIND_IP:?Set Tailscale IPv4}:${KUMA_PORT:-3001}:3001"
+    volumes:
+      - type: bind
+        source: ${KUMA_DATA_ROOT:?Set SSD data root}
+        target: /app/data
+        bind:
+          create_host_path: false

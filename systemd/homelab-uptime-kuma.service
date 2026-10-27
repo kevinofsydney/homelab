@@ -1,0 +1,16 @@
+[Unit]
+Description=Start Uptime Kuma after private access and SSD verification
+Wants=network-online.target docker.service tailscaled.service
+After=network-online.target docker.service tailscaled.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/homelab/scripts/deploy-uptime-kuma.sh --apply
+TimeoutStartSec=180
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

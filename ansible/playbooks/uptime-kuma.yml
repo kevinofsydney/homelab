@@ -1,0 +1,63 @@
+---
+- name: Stage and enable a private Uptime Kuma service
+  hosts: applications
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Require confirmed private bind address
+      ansible.builtin.assert:
+        that:
+          - kuma_bind_ip is defined
+          - kuma_bind_ip is match('^100\\.[0-9]+\\.[0-9]+\\.[0-9]+$')
+    - name: Verify that the chosen data parent is a local ext4 disk
+      ansible.builtin.command: findmnt -n -T /srv -o SOURCE,FSTYPE
+      changed_when: false
+      check_mode: false
+      register: kuma_disk
+      failed_when: kuma_disk.rc != 0 or not kuma_disk.stdout.startswith('/dev/') or ' ext4' not in kuma_disk.stdout
+    - name: Create dedicated local data and configuration directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {path: /srv/uptime-kuma, mode: '0700'}
+        - {path: /opt/homelab/compose/uptime-kuma, mode: '0755'}
+    - name: Install reviewed configuration and deployment script
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: '{{ playbook_dir }}/../../compose/uptime-kuma/compose.yml', dest: /opt/homelab/compose/uptime-kuma/compose.yml, mode: '0644'}
+        - {src: '{{ playbook_dir }}/../../scripts/deploy-uptime-kuma.sh', dest: /opt/homelab/scripts/deploy-uptime-kuma.sh, mode: '0755'}
+        - {src: '{{ playbook_dir }}/../../systemd/homelab-uptime-kuma.service', dest: /etc/systemd/system/homelab-uptime-kuma.service, mode: '0644'}
+    - name: Generate local private configuration without replacing an existing file
+      ansible.builtin.copy:
+        content: |
+          KUMA_IMAGE=louislam/uptime-kuma:2.5.8@sha256:20abea8c48a163cf0a7a5d5936ab418e4b742d908704e1f58f6c06e56a9c6b67
+          KUMA_BIND_IP={{ kuma_bind_ip }}
+          KUMA_PORT=3001
+          KUMA_DATA_ROOT=/srv/uptime-kuma
+        dest: /opt/homelab/compose/uptime-kuma/.env
+        owner: root
+        group: root
+        mode: '0600'
+        force: false
+    - name: Validate installed systemd unit and reload
+      ansible.builtin.command: systemd-analyze verify /etc/systemd/system/homelab-uptime-kuma.service
+      changed_when: false
+      when: not ansible_check_mode
+    - name: Reload systemd units
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: not ansible_check_mode
+    - name: Enable service without starting it
+      ansible.builtin.systemd_service:
+        name: homelab-uptime-kuma.service
+        enabled: true
+      when: not ansible_check_mode

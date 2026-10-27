@@ -26,12 +26,15 @@ The GitHub repository is private. Continue keeping actual inventory and secrets 
 
 The BinaryLane VPS that ran Hermes and the UFC agent was destroyed; their rebuild here is planned, not started. See the [rebuild handoff](agents/handoffs/ufc-hermes-rebuild.md).
 
+See the [topology and resource diagram](docs/homelab-diagram.md) for current allocations and planned services.
+
 ## Repository map
 
 - `config/`: example site configuration; actual configuration is ignored.
 - `proxmox/`: template procedure and VM definition.
 - `ansible/`: guest baseline plus separate private-access and dormant assistant-tool playbooks.
-- `compose/paperless/`: first private application stack, gated on its NAS mount.
+- `compose/paperless/`: private application stack, gated on its NAS mount.
+- `compose/uptime-kuma/`: private status dashboard and deployment runbook.
 - `compose/n8n/`: inactive staging files retained for possible future use; self-hosted n8n is outside current scope.
 - `scripts/`: preflight, provisioning, deployment and backup validation.
 - `docs/`: architecture, security, storage, recovery and upstream source notes.
