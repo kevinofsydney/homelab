@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: prepared a [review-only initial Hermes VM isolation policy](../docs/hermes-isolation-preparation.md) and acceptance/rollback plan. It is not deployed. It blocks private ranges and IPv6 egress but permits arbitrary public IPv4; it is not the stronger public-destination allowlist in the Hermes plan. The Proxmox host firewall remains unfiltered, and VM 101 has no VM-specific firewall policy. The guest serial console reached login but QEMU guest agent remains nonresponsive; verify guest identity before SSH administration.
+
+
 2026-10-28: the owner requested resilience across homelab services and explicitly enabled autostart for Hermes VM 101. Set `onboot: 1` and `startup: order=3`, started VM 101 and observed its serial login prompt. The guest agent did not respond during initial checks; guest IP and host key are not yet independently verified. Proxmox firewall is enabled, but **no VM 101-specific firewall policy has been installed**. No agent, credentials, gateway or n8n access were configured. Neither guest nor host reboot recovery has been tested for this VM. Confirm guest identity and develop an approved externally enforced isolation policy before activating agent software. Existing VMs 100 and 130 remained running.
 
 The owner expects future services to recover from shutdown automatically. For each service, document and test host and guest startup order, service restart behavior, dependency readiness and any fail-closed mount gates; record a real recovery test separately from configuration. Do not bypass storage or isolation checks to make autostart succeed.

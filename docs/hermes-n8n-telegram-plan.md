@@ -26,6 +26,8 @@ The plan-first `scripts/clone-application-vm.sh` supports explicit `APP_VM_CORES
 
 ## Isolation
 
+A concrete [initial VM policy proposal](hermes-isolation-preparation.md) is prepared for review. It is not applied and does not implement the public-destination allowlist described below.
+
 Host-enforced, outside the agent's control, following the pattern proven on the development VM on 2026-10-27 (host firewall applied, VM blocked from private addresses, verified after a reboot; see [dev VM isolation plan](dev-vm-isolation-plan.md)):
 
 - Deny every private address, including Proxmox management, the NAS, the router and the application VM.

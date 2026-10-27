@@ -1,0 +1,19 @@
+# REVIEW ONLY. Replace ROUTER_IPV4 using verified private site inventory.
+# This file does not enforce public-host-only egress; see the runbook.
+[OPTIONS]
+enable: 1
+policy_in: ACCEPT
+policy_out: ACCEPT
+dhcp: 1
+ndp: 1
+macfilter: 1
+
+[RULES]
+OUT ACCEPT -dest ROUTER_IPV4 -p udp -dport 53
+OUT ACCEPT -dest ROUTER_IPV4 -p tcp -dport 53
+OUT REJECT -dest 192.168.0.0/16
+OUT REJECT -dest 10.0.0.0/8
+OUT REJECT -dest 172.16.0.0/12
+OUT REJECT -dest 169.254.0.0/16
+OUT REJECT -dest 100.64.0.0/10
+OUT REJECT -dest ::/0
