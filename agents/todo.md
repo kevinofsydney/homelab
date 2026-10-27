@@ -14,11 +14,11 @@ Rules for maintaining this file:
 | # | Action | Why it matters | Approval needed | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | VM backups for 100 and 130, plus a restore test | Only unmitigated single point of failure left; the host has already taken two unclean shutdowns and has no validated backup | Yes — host storage and backup job | ~1 h | Not started |
-| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Not started |
+| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs not yet in ignored inventory |
 | 3 | Mitigate the `e1000e` NIC hang on the host | Root cause of the 2026-10-27 outage; recurs under VM load and presents as "the whole homelab vanished" | Yes — host driver/kernel change | ~30 min + reboot | Not started |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
-| 5 | dev VM Tailscale join, gated on a tailnet policy | Tunnel traffic bypasses the Proxmox firewall rules; joining without a policy silently re-opens the isolation work | Yes — guest and tailnet policy change | Policy first, then 10 min | Blocked on policy |
 | 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
+| 7 | dev VM `grubenv` corrupted at every boot | `grub2-common.service` fails, guest reports `degraded`, GRUB's recordfail fallback is unreliable | Guest change; low risk | ~30 min + a dev VM reboot | Reopened; root cause unknown |
 
 ## Detail
 
@@ -35,6 +35,7 @@ No validated backup exists for either guest. The 2026-10-27 incident (a release 
 Autostart ordering and the dev VM's firewall acceptance now depend on fixed addresses (`<lan-host>` host, `.232` dev, `.124` home-services). A lease change breaks inventory, Ansible and the Tailscale-bound services at the same time.
 
 - Done when: each device holds a reservation in the router, MAC addresses are recorded in the ignored site inventory, and a host reboot shows unchanged addresses.
+- 2026-10-27: the owner reported making the reservations. A Proxmox reboot later the same evening kept `.10`, `.124` and `.232`. The MACs (host `nic0`, VM 100 and VM 130 `net0`) are readable from `ip -br link` on the host and `qm config`; record them in the ignored inventory to close this. The QNAP address is still unconfirmed by identity.
 - The firewall rules in `proxmox/firewall/` reference these addresses; review them in the same change.
 
 ### 3. `e1000e` NIC hang
@@ -53,18 +54,20 @@ Paperless is healthy but has never seen its QNAP export disappear while running.
 - Done when: with the export unavailable the service fails closed and logs it (no silent empty document tree); on return, ingest and OCR work again; a restore from the step-1 backup is demonstrated.
 - Do not weaken NFS root squashing or the 0700 modes to make the test pass.
 
-### 5. dev VM Tailscale join
-
-The client on `dev` is installed and logged out. The isolation work warns that tunnel traffic bypasses the Proxmox firewall rules, so a tailnet policy must land first.
-
-- Done when: a tailnet policy restricts `dev` to the intended destinations, the client joins, and acceptance tests show the previous isolation still holds for tunnel traffic.
-- Cosmetic extras in the same maintenance window: 7 `rc`-state package configs, the stale `/var/lib/ubuntu-release-upgrader/release-upgrade-available` marker.
-
 ### 6. Hardware health, BIOS and UPS audit
 
 Still listed as pending in [shared context](context.md) since the first milestone.
 
 - Done when: CPU/RAM/disk health, BIOS/firmware version and power-loss behaviour are recorded, and the absence or presence of a UPS is documented.
+
+### 7. dev VM `grubenv` corrupted at boot
+
+Seen on two consecutive boots (12:05 and 12:26 UTC, 2026-10-27): the first found `invalid environment block`, the second an empty file that the unit's `ExecStartPre` deleted, so `grub-editenv unset recordfail` failed with "No such file". Between boots the file was a valid 1024-byte block, and the guest's previous boot ended with a clean `systemd-shutdown` sync, so an unclean shutdown alone does not explain it. `grub-initrd-fallback.service` recreates a valid file shortly afterwards, which is why later checks look healthy.
+
+- Facts: BIOS boot, `grub-pc` 2.14-2ubuntu2.1, `/boot` is ext4 on `sda16` with `metadata_csum`, 4 KiB blocks, the file in one extent. `grub.cfg` calls `save_env` for `prev_entry`, `next_entry` and `saved_entry` during boot.
+- Next: snapshot `grubenv` (`od -c`, `sha256sum`, `filefrag -v`) just before a shutdown and again at the start of the next boot from the initramfs or a debug unit ordered before `grub2-common.service`, to tell whether GRUB's in-place `save_env`, shutdown, or something else empties it.
+- Done when: two consecutive dev VM reboots leave `grub2-common.service` successful and the guest `running`.
+- Cosmetic extras for the same dev VM window: 7 `rc`-state package configs, the stale `/var/lib/ubuntu-release-upgrader/release-upgrade-available` marker.
 
 ## Closed
 
@@ -74,9 +77,10 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 | --- | --- |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
 | dev VM release upgrade to 26.04.1 LTS | `dpkg --audit` empty, 7.0.0-38 kernel, no pending upgrades; the interrupted run stopped at the upgrader's "remove obsolete packages" prompt |
-| dev VM GRUB environment block | `grub-editenv` validates, `grub2-common.service` succeeds, guest reports `running` (commit `12dff12`) |
+| dev VM GRUB environment block | Superseded: the fault recurred at the next boot; reopened as action 7 |
 | Proxmox SSH key-only | Root key login kept, passwords refused (commit `12dff12`) |
-| dev VM management isolation | Proxmox firewall applied with the host unfiltered and VM 100 blocked from private addresses (commits `6c81c70`, `1b9744e`) |
+| dev VM management isolation | Proxmox firewall applied with the host unfiltered and VM 100 blocked from private addresses (commits `6c81c70`, `1b9744e`); survived an owner-requested host reboot with the full acceptance set passing again |
+| dev VM Tailscale join | Tailnet policy gives tagged devices no grant; dev joined as `tag:dev`; over the tailnet it is blocked from home-services, the NAS and Titan while the owner still reaches it (PR #27) |
 | Ubuntu unattended-upgrades on both guests | Installed and scheduled; Tailscale origins added through `Origins-Pattern`; update window retimed to 02:30/03:00 `Australia/Sydney` (commit `7f3c0a8`) |
 | Tailscale automatic updates | Repo re-pointed to `resolute` on dev; drop-ins on both guests; `tailscaled` restart proven transparent on home-services |
 | Obsolete packages after the release upgrade | `apt autoremove` on dev removed the autoremovable set; `apt-get -s autoremove` now reports 0 |

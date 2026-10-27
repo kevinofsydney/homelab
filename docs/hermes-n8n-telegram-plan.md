@@ -1,42 +1,85 @@
-# Hermes with Telegram and n8n: initial deployment plan
+# Hermes agent with Telegram, Git and n8n MCP: deployment plan
 
-Status: design and read-only discovery, 2026-10-27. No new guest, firewall, n8n, bot, provider credentials or service has been created for this plan. This plan does not authorize execution. The existing [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md) remains the source for workflow IDs and prior requirements; self-hosted n8n and QNAP backups remain outside scope.
+Status: owner decisions recorded 2026-10-27. **No guest, firewall rule, bot, provider credential or service has been created**, and this plan does not authorize execution. Workflow IDs and prior requirements remain in the [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md); self-hosted n8n and QNAP backups stay out of scope.
 
-## Goal and placement
+## Decisions
 
-A Telegram user chats privately with Hermes, which uses an approved hosted model and narrowly scoped n8n MCP capabilities. Start with one separate Hermes guest, rather than enabling the dormant Hermes installation in the development guest. The latter currently has an owner-initiated Ubuntu release upgrade in progress, and the coding account can reach Proxmox and QNAP management. The 2026-10-27 read-only inventory showed the existing template and two VMs, about 19 GiB host memory available and approximately 6.9% thin-pool physical use. These are observations, not reservations or sizing approval; inspect real capacity again before creating a guest. The earlier proposal of 4 vCPU, 8 GiB and 80 GiB is an initial sizing proposal, not a running guest. Select an unused ID, review the disk budget, preserve both existing VMs and leave host disks/network untouched.
+| Topic | Decision |
+| --- | --- |
+| Runtime | Hermes, pinned release, using the existing `ansible/roles/hermes_cli` |
+| Model | Latest DeepSeek flash. The exact model identifier is resolved from the provider catalogue at deploy time and is not assumed here; `deepseek-v4.1-flash` in the handoff is the last recorded value, not a promise |
+| Provider and budget | OpenRouter in front of that model, chosen for a **hard $10/month key limit**. DeepSeek direct is prepaid balance, which caps spend only while auto-top-up stays off |
+| Availability | 24/7 with `onboot 1` and `startup order=3` on the new guest, gateway supervised as a systemd unit |
+| Git authority | GitHub App installation scoped to this repository: contents and pull requests only. **Opens pull requests and does not merge them** |
+| n8n authority | Inspect, edit, test and **publish** workflows in the `UFC | ` scope. No freeze window. Export before publish is mandatory |
+| Chat | Telegram, owner's numeric ID only, private chat, long polling |
 
-The existing clone script hardcodes 2 vCPU, 4 GiB and 60 GiB; it must not be used as though it implements the proposed sizing. Prepare and test a parameterized, plan-by-default provisioning change first, or explicitly choose its existing allocation after capacity review. A separate UFC agent and its API gateway are **not** required merely to install Hermes; deploy those only if the operator requests them.
+## Goal
 
-## Isolation and access
+The owner talks to one agent over Telegram and it: clones and pulls repositories, edits and tests them, commits and pushes a branch, opens a pull request, and inspects or changes `UFC | ` n8n workflows.
 
-Before any model or Telegram gateway starts, enforce the guest's network isolation outside the agent's control, verify the guest and any nested sandbox cannot reach Proxmox, QNAP, router management, the app VM or other protected LAN hosts, and verify only intended outbound destinations are reachable. The last read-only check showed `pve-firewall status` as disabled/running; enabling it or changing rules is a host/network change requiring explicit approval and an independently verified management path and rollback plan. Do not assert isolation from a process running as the agent or from instructions in a prompt. Dynamic DNS, provider endpoints, TLS and IPv6 need a workable egress design; do not assume a hostname rule is enforced by a firewall that only understands IP addresses.
+## Placement and sizing
 
-Use a separate non-sudo `hermes` user and its own credentials, with no host Docker socket, Proxmox/QNAP/router access, infrastructure tokens, or unrestricted production access. Install the pinned CLI using a guest-targeted Ansible playbook and a previously verified release. The existing role is pinned to Ubuntu 24.04 and Hermes v0.22.5; review current release compatibility and version-specific configuration before applying. A rootless sandbox or a tool-disabled initial chat must be tested rather than assumed to be a security boundary. The guest's Proxmox autostart is off by default; enable it only after a separate reviewed/approved host change.
+A dedicated guest (next unused VM ID) cloned from the proven Ubuntu 24.04.5 template — not the development VM and not the application VM. Proposed 4 vCPU / 8 GiB / 80 GiB, confirmed against real capacity first; with 8 GiB on VM 100 and 4 GiB on VM 130 that leaves roughly 12 GiB of the host's 32 GiB for Proxmox.
 
-## Provider and Telegram
+`scripts/clone-application-vm.sh` hardcodes 2 vCPU / 4 GiB / 60 GiB, so either a parameterized, plan-by-default provisioner lands first or that allocation is accepted explicitly.
 
-Recommend OpenRouter initially, with a provider-side spend limit and a reviewed DeepSeek model that is available at deployment time. Direct DeepSeek and OpenCode can be added later; do not assume a specific model identifier, API entitlement, pricing, or automatic fallback. Confirm the operator's provider and model before activation. Use supported Hermes setup/secret storage; the operator enters provider and Telegram credentials via a hidden-input terminal or secret manager, never chat, Git, shell arguments or logs. Do not reuse a token in two running bot processes.
+## Isolation
 
-Configure the Telegram gateway to accept only the owner's verified numeric Telegram ID in a private chat; do not enable allow-all. Confirm behavior with an unauthorized sender without sending unsolicited messages. The owner should initiate the test conversation. Recheck the pinned release's actual authorization semantics before declaring the boundary effective.
+Host-enforced, outside the agent's control, following the pattern proven on the development VM on 2026-10-27 (host firewall applied, VM blocked from private addresses, verified after a reboot; see [dev VM isolation plan](dev-vm-isolation-plan.md)):
 
-## n8n access and workflow scope
+- Deny every private address, including Proxmox management, the NAS, the router and the application VM.
+- Allow only the destinations the agent needs: `api.telegram.org`, `api.github.com`, the OpenRouter endpoint and the n8n host.
+- Do **not** enrol this guest in Tailscale. Telegram long polling needs no inbound path, and a tailnet route would bypass address-based rules.
+- Verify from inside the guest and from inside the agent's sandbox, not from a prompt or the agent's own report.
 
-The operator reported on 2026-10-27 that all non-UFC workflows are archived, and later said a workflow ID allowlist is no longer needed. Scope is the workflows named `UFC | ` in the UFC folder, currently 18 (see the handoff's reference inventory). Make sure any n8n-side account, project and MCP access is scoped to that project. If the UFC gateway enforces scope, it must check the operation and the workflow's name as returned by n8n, never a name supplied by the caller. Do not claim a boundary is enforced until tested, including guessed IDs and execution IDs owned by a non-UFC workflow. Inspect the connected n8n version and actual MCP tool schemas before selecting a proxy design. The currently available session has no n8n connector or MCP credential.
+## Credentials
 
-Initial safe default while access preference is unresolved: inspect the approved workflows and propose changes only. Treat MCP tools that run, test, edit, publish, restore or execute workflows as side-effecting until verified. If the operator wants edits, prepare a separate approval-controlled path with diffs, validation and a rollback reference. The user's current request to work on workflows does not by itself establish that arbitrary workflow execution or publishing is authorized.
+| Secret | Scope | Notes |
+| --- | --- | --- |
+| GitHub App installation token | This repository only, contents + pull requests | Short-lived and revocable per installation; no Actions, workflow or secret administration |
+| Telegram bot token | Owner's numeric ID, private chat | One process per token; entered through hidden input or a secret store, never chat, Git or shell arguments |
+| n8n MCP credential | The UFC project, workflows named `UFC | ` | Scope checked server-side on the workflow name returned by n8n, never on a caller-supplied name |
+| Model provider key | $10/month hard limit | Plus agent-side job budget, timeouts and telemetry off |
 
-## Review and acceptance order
+`GITHUB_TOKEN` is forwarded into the sandbox only, as recorded in the handoff; it never reaches the host shell or logs.
 
-1. Confirm desired provider, n8n scope and permitted workflow operations. Record decisions without secrets.
-2. Prepare a concrete VM and host-enforced egress policy, verify capacity, known-host access and rollback; obtain explicit approval for VM/firewall changes before applying.
-3. Install the agent in the new guest; test guest and sandbox isolation from management targets before adding any credential or connecting MCP.
-4. The operator securely enters provider, bot and scoped n8n credentials. Configure owner-only Telegram, spending limits and, in the UFC gateway, server-side scope checks on the `UFC | ` workflow name. Verify exact available MCP tools and supported auth on the actual n8n instance.
-5. Test denied IDs, denied mutations, non-owner Telegram access and sandbox egress. With the owner initiating the interaction, test a harmless chat and one approved read-only workflow inspection. Record only status, not token values or message contents.
-6. Add systemd/boot recovery only after reviewing required host-autostart approval. Record exact installed versions, tests, status and rollback in shared runbooks. Recovery/backup remains a separately deferred concern.
+## Git workflow
+
+Clone into `/home/hermes/workspaces`, branch, commit, push **its own branch**, open a pull request, stop. `main` stays protected against the agent identity, so a bad edit costs a closed PR rather than a broken `main`. Deny force-push, branch deletion and `curl | sh`/`wget | sh`, per the handoff's approval configuration.
+
+## n8n workflow authority
+
+Edit and publish are authorised. Because publishing is immediate and there is no freeze window, the guardrails are per-change rather than calendar-based:
+
+1. Export the current workflow JSON to a dated file **before** any publish; the change is not made if the export fails.
+2. Publish as the final step, after the edit and any test, and log a one-line diff summary first.
+3. Rollback is re-importing the previous export. Version history is a convenience, not the recovery plan.
+4. Inspect the instance's real MCP tool schemas first: publishing may be a parameter of an update tool rather than a separate one, and every tool that runs, tests or executes is side-effecting until proven otherwise.
+5. A bad publish during a UFC card is possible by design; the owner accepted that risk with the export-before-publish requirement and no freeze window.
+
+## Telegram
+
+Owner-only numeric ID in a private chat, never allow-all. Long polling means no published service and no inbound port, so [bot protection](bot-protection.md) does not apply. Test with an unauthorised sender without sending unsolicited messages, and have the owner initiate the first conversation.
+
+## Phases and gates
+
+| Phase | Work | Gate before proceeding |
+| --- | --- | --- |
+| 0 | Backups exist (todo #1), DHCP reservation, App installed, provider key with the $10 limit, model ID confirmed | Owner decisions complete; a backup exists before an agent holds push rights |
+| 1 | Clone the guest, baseline, host firewall, isolation acceptance, rollback test | Private addresses unreachable from guest and sandbox |
+| 2 | Pinned Hermes, `hermes` user, rootless Docker, pinned sandbox image, approvals `manual`, checkpoints, redaction, telemetry off | No host socket, no LAN route, sandbox cannot see management addresses |
+| 3 | GitHub App + scratch repository: clone → branch → commit → push → pull request | Cannot push `main`, cannot force-push, no token in logs |
+| 4 | Telegram gateway unit, owner allowlist, spend cap, kill switch | Unauthorised sender refused; an injection attempt to push to `main` refused |
+| 5 | n8n MCP read-only inspection, then edit and publish with the export step | Denied IDs fail server-side; an export is proven restorable |
+| 6 | `onboot 1` order 3, gateway restart policy, workspace backup, runbook | A guest reboot brings the bot back without intervention |
+
+## Acceptance evidence
+
+Record command output and journal lines, not summaries, in [open work](../agents/todo.md) and [shared context](../agents/context.md): isolation probes, `git` refusal on `main`, Telegram allowlist denial, a restored workflow export, and the reboot recovery.
 
 ## References
 
-- [Hermes messaging and model-provider documentation](https://hermes-agent.nousresearch.com/docs), [Telegram configuration](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram), and [model configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuring-models). Check against the exact installed release; current documentation may describe newer behavior.
-- [n8n workflow sharing and permissions](https://docs.n8n.io/workflows/sharing/). Verify feature availability and actual MCP capabilities on the owner's instance.
-- [Focused security review](security-review-2026-10-27.md) and [private access runbook](private-access.md).
+- [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md) — pinned Hermes configuration and prior requirements.
+- [Agent permission model](../agents/permissions.md) — what the Hermes actor may and may not do.
+- [Private access](private-access.md), [security](security.md), [dev VM isolation plan](dev-vm-isolation-plan.md).
