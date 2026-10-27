@@ -1,5 +1,6 @@
 // n8n Code node body for "Build Verified UFC Card" in UFC | svc.populate_fight_card (parser_version ufc-fight-card-v3).
-// Copied unchanged from the 2026-10-27 operator handoff. Not yet applied or published in n8n.
+// Copied unchanged from the 2026-10-27 operator handoff. SUPERSEDED: never applied, and do not apply it.
+// See "Resolved: n8n fight-card outage" in ../ufc-hermes-rebuild.md for the fix that is live instead.
 const HEADERS=['fight_order','fighter_a','fighter_b','fighter_a_aliases','fighter_b_aliases','bout_type','scheduled_rounds','weight_class'];
 const text=v=>String(v??'').trim();
 const norm=v=>text(v).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');

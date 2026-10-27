@@ -3,7 +3,7 @@
 | Actor | Allowed | Denied |
 | --- | --- | --- |
 | Interactive coding tools as `coder` | Work in development repos, run local tests, request PRs | Sudo, Docker group, production credentials, Proxmox/QNAP/router administration |
-| Hermes coding agent (planned, own guest) | Owner-only Telegram; Docker-sandboxed shell; fine-grained GitHub PAT (contents and PRs); 19 n8n MCP tools on 14 allowlisted UFC workflows | Root, sudo, `docker` group, LAN/management routes, UFC gateway and its secrets |
+| Hermes coding agent (planned, own guest) | Owner-only Telegram; Docker-sandboxed shell; fine-grained GitHub PAT (contents and PRs); 19 n8n MCP tools on `UFC | ` workflows (no ID allowlist since 2026-10-27) | Root, sudo, `docker` group, LAN/management routes, UFC gateway and its secrets |
 | UFC agent bot (planned, own guest) | Owner-only Telegram diagnosis through a loopback read-only n8n gateway | Shell, HTTP, credentials, n8n API key, any n8n mutation or execution |
 | Telegram assistant (future) | Health summaries from sanitized telemetry, create draft issues | Shell, infrastructure APIs, production secrets, direct deployment |
 | Disposable coding worker (future) | One approved repository checkout, branch, tests, draft PR | Production network, Proxmox/QNAP/router, broad GitHub token, persistent host mounts |
