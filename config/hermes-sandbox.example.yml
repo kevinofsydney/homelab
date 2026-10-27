@@ -1,0 +1,15 @@
+# Review-only fragment for the pinned Hermes release; not a complete config.yaml.
+# Replace the image placeholder with an independently reviewed immutable digest.
+# Do not apply or start the gateway before rootless isolation and egress checks.
+terminal:
+  backend: docker
+  docker_image: REPLACE_WITH_REVIEWED_IMAGE_DIGEST
+  docker_forward_env: []
+  docker_env: {}
+  docker_volumes: []
+  docker_mount_cwd_to_workspace: false
+  docker_extra_args: []
+  docker_network: true
+  container_cpu: 2
+  container_memory: 4096
+  container_persistent: false
