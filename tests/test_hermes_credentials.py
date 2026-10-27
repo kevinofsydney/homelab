@@ -45,5 +45,12 @@ class CredentialsTests(unittest.TestCase):
             self.assertIsNone(pattern.fullmatch("$(whoami)"))
 
 
+    def test_exa_key_format(self):
+        key, pattern = module.FIELDS["exa"]
+        self.assertEqual(key, "EXA_API_KEY")
+        self.assertIsNotNone(pattern.fullmatch("0123abcd-4567-89ef-0123-456789abcdef"))
+        self.assertIsNone(pattern.fullmatch("short"))
+        self.assertIsNone(pattern.fullmatch("has space in it 1234567890"))
+
 if __name__ == "__main__":
     unittest.main()

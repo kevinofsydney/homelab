@@ -1,6 +1,6 @@
 # Hermes rootless sandbox: installation proposal
 
-Status: **review-only; not deployed**. The owner wants Hermes to work on code and recover after reboots. The guest has no Docker daemon, Docker socket, `newuidmap` or `slirp4netns`. The `hermes` account has a 65,536-entry subordinate UID range and GID range, but no lingering user manager. The guest has cgroup v2 and AppArmor active. The VM-specific Proxmox firewall is applied, but unrestricted public IPv4 egress and the absence of a tested sandbox prevent gateway activation.
+Status: **deployed and verified 2026-10-28** (see [Deployment evidence](#deployment-evidence-2026-10-28)). Original proposal text follows. The owner wants Hermes to work on code and recover after reboots. The guest has no Docker daemon, Docker socket, `newuidmap` or `slirp4netns`. The `hermes` account has a 65,536-entry subordinate UID range and GID range, but no lingering user manager. The guest has cgroup v2 and AppArmor active. The VM-specific Proxmox firewall is applied, but unrestricted public IPv4 egress and the absence of a tested sandbox prevent gateway activation.
 
 ## Scope for approval
 
@@ -35,3 +35,23 @@ The locally installed Hermes source at the pinned commit sets its default sandbo
 Read-only official Docker Hub tag metadata returned `v0.21.7-desktop` as the newest sandbox tag and `desktop` pointing to the same manifest index on 2026-10-28: `sha256:c7d8607d076f26a64e0bd6828f74e1764af43fe3281368188459bb693bfa7567`; the Linux AMD64 child digest was `sha256:91001712f321902e61fbd8d89d08700ab3c3b151f801bde1a46fed876f54a5ce`. Docker Hub reported about 1.20 GB compressed for that architecture. No sandbox tag corresponding to the installed Hermes `v0.22.5` appeared in that response. The official [sandbox Dockerfile](https://github.com/NousResearch/hermes-agent/blob/main/docker/sandbox-desktop.Dockerfile) describes a desktop/browser stack; the published image does not include the Hermes runtime itself. This is a candidate, not an approved image: its digest provenance, compatibility, layer contents, vulnerabilities and runtime behavior remain unreviewed. Do not pull or configure it merely because metadata was recorded. Resolve a release-appropriate image and verify it before activation.
 
 The pinned source also distinguishes a persistent shared sandbox from non-persistent per-session isolation. Even with `container_persistent: false`, prove actual lifecycle, mounts, network controls and resource enforcement through container inspection and failure tests; a YAML flag alone is not evidence of isolation.
+
+## Deployment evidence (2026-10-28)
+
+Rootless Docker was installed by an earlier owner-approved session whose own evidence was not committed. The state below was read live from VM 101 through the Proxmox guest agent.
+
+- Docker 29.9.2 rootless under `hermes` (uid 1001, only group `hermes`, no sudo): `systemctl --user` `docker` active and enabled, lingering `yes`, `docker info` security options include `rootless` and `cgroupns`, cgroup driver `systemd`. System `docker.service`, `docker.socket` and `containerd.service` inactive and disabled. Only SSH and the local resolver listen; no Docker TCP listener.
+- The guest booted at 22:28 UTC with the rootless service active afterwards, consistent with the earlier session's reboot-recovery report.
+
+Configuration applied with the owner's approval (equivalent to `ansible/playbooks/hermes-sandbox-config.yml`, run through the guest agent because the operator machine had no inventory for VM 101; the previous `config.yaml` is kept as `config.yaml.pre-hardening-20261028`):
+
+- Image pinned by digest: `nousresearch/hermes-sandbox@sha256:c7d8607d076f26a64e0bd6828f74e1764af43fe3281368188459bb693bfa7567` (the `v0.21.7-desktop`/`desktop` index; Docker Hub publishes only desktop builds, none matching Hermes v0.22.5). Pulled into rootless Docker.
+- `container_persistent: false`, `container_cpu: 2`, `container_memory: 4096`, `docker_network: true`, workspace `/home/hermes/workspaces` (0700) mounted at `/workspace/projects`, `timeout: 900`.
+- Approvals `manual`, timeout 300, deny list from the handoff (force-push, `+refspec`, branch deletion, `curl|sh`, `wget|sh`); checkpoints on; secret redaction on; telemetry off; `web.backend: exa`.
+- `hermes-secret` updated to accept `exa` (`EXA_API_KEY`); deployed copy matches the repository file's SHA-256.
+
+Sandbox test (the pinned image, run as `hermes` with `--cpus 2 --memory 4096m` and the workspace mount): cgroup `cpu.max` `200000 100000`, `memory.max` 4294967296; Proxmox 8006, QNAP 443, router 80 and home-services 22 **blocked**; `api.github.com` 200 and `api.exa.ai` reachable.
+
+Finding: the sandbox **can** connect to the Hermes VM's own LAN address on TCP 22. That traffic stays inside the guest, so the Proxmox VM firewall does not see it. Guest SSH is key-only, so the risk is low; closing it needs a guest nftables rule rejecting `hermes`-owned traffic to private ranges, which requires approval.
+
+Not yet verified: Hermes itself launching a sandbox session (no model provider is configured), the gateway, and any credential other than the owner ID.

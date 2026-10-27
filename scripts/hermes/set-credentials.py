@@ -14,6 +14,7 @@ FIELDS = {
     "telegram": ("TELEGRAM_BOT_TOKEN", re.compile(r"[0-9]+:[A-Za-z0-9_-]+")),
     "openrouter": ("OPENROUTER_API_KEY", re.compile(r"sk-or-[A-Za-z0-9_-]+")),
     "owner": ("TELEGRAM_ALLOWED_USERS", re.compile(r"[1-9][0-9]{0,19}")),
+    "exa": ("EXA_API_KEY", re.compile(r"[A-Za-z0-9_-]{16,128}")),
 }
 
 

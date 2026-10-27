@@ -13,6 +13,8 @@ Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created a
 | Git authority | GitHub App installation scoped to this repository: contents and pull requests only. **Opens pull requests and does not merge them** |
 | n8n authority | Inspect, edit, test and **publish** workflows in the `UFC | ` scope. No freeze window. Export before publish is mandatory |
 | Chat | Telegram, owner's numeric ID only, private chat, long polling |
+| Network egress | **Open public internet** (owner decision 2026-10-28). Private ranges, Tailscale/CGNAT and IPv6 stay blocked by the Proxmox VM firewall. The owner accepted that a hijacked agent could reach any public host, in exchange for web search; blast radius is limited by narrow, capped, revocable credentials and a rebuildable VM. Supersedes the public-destination allowlist below |
+| Web search | Exa (`web.backend: exa`), key entered by the owner through `hermes-secret exa` |
 
 ## Goal
 
@@ -33,7 +35,7 @@ A concrete [initial VM policy proposal](hermes-isolation-preparation.md) is prep
 Host-enforced, outside the agent's control, following the pattern proven on the development VM on 2026-10-27 (host firewall applied, VM blocked from private addresses, verified after a reboot; see [dev VM isolation plan](dev-vm-isolation-plan.md)):
 
 - Deny every private address, including Proxmox management, the NAS, the router and the application VM.
-- Allow only the destinations the agent needs: `api.telegram.org`, `api.github.com`, the OpenRouter endpoint and the n8n host.
+- ~~Allow only the destinations the agent needs~~: superseded on 2026-10-28 by the owner's open-egress decision (see Decisions). Keep every credential narrow, capped and listed for revocation instead.
 - Do **not** enrol this guest in Tailscale. Telegram long polling needs no inbound path, and a tailnet route would bypass address-based rules.
 - Verify from inside the guest and from inside the agent's sandbox, not from a prompt or the agent's own report.
 

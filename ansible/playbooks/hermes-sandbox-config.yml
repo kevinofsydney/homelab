@@ -1,0 +1,64 @@
+---
+# Owner-approved 2026-10-28: open public egress (private ranges stay blocked by the
+# Proxmox VM firewall), Exa web search, and the sandbox/approval settings from the
+# UFC/Hermes handoff. Does not add credentials or start the gateway.
+- name: Pin the Hermes sandbox image and harden the dormant agent configuration
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  vars:
+    hermes_sandbox_image: "nousresearch/hermes-sandbox@sha256:c7d8607d076f26a64e0bd6828f74e1764af43fe3281368188459bb693bfa7567"
+    hermes_settings:
+      terminal.docker_image: "{{ hermes_sandbox_image }}"
+      terminal.container_persistent: "false"
+      terminal.container_cpu: "2"
+      terminal.container_memory: "4096"
+      terminal.docker_network: "true"
+      terminal.docker_volumes: '["/home/hermes/workspaces:/workspace/projects"]'
+      terminal.docker_mount_cwd_to_workspace: "false"
+      terminal.timeout: "900"
+      approvals.mode: manual
+      approvals.timeout: "300"
+      approvals.deny: '["git push --force*", "git push -f*", "*git push*+*", "git push * --delete*", "git push * :*", "*curl*|*sh*", "*wget*|*sh*"]'
+      checkpoints.enabled: "true"
+      security.redact_secrets: "true"
+      telemetry.shared_metrics.enabled: "false"
+      telemetry.shared_metrics.send: "false"
+      web.backend: exa
+  tasks:
+    - name: Require the reviewed guest
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+          - ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Create the private workspace directory mounted into sandboxes
+      ansible.builtin.file:
+        path: /home/hermes/workspaces
+        state: directory
+        owner: hermes
+        group: hermes
+        mode: '0700'
+
+    - name: Pull the pinned sandbox image into rootless Docker
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "docker pull {{ hermes_sandbox_image }}"]
+      register: hermes_pull
+      changed_when: "'Downloaded newer image' in hermes_pull.stdout"
+      when: not ansible_check_mode
+
+    - name: Read current settings
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config get {{ item.key }}"]
+      loop: "{{ hermes_settings | dict2items }}"
+      register: hermes_current
+      changed_when: false
+      check_mode: false
+
+    - name: Apply settings that differ, using the Hermes configuration CLI
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set {{ item.item.key }} {{ item.item.value | quote }}"]
+      loop: "{{ hermes_current.results }}"
+      loop_control:
+        label: "{{ item.item.key }}"
+      when: (item.stdout | from_yaml | to_json) != (item.item.value | from_yaml | to_json) and not ansible_check_mode
