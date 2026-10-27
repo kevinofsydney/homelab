@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: ran a reproducible offline Telegram adapter diagnostic against the installed pinned Hermes runtime with synthetic identities. Owner private and denied stranger private/group-message cases passed, but the adapter's environment-only callback fallback accepted an owner callback from a group. This is a mocked fallback test, not proof that the real gateway invokes that path. It demonstrates the need to test private-chat-only behavior across messages and callbacks before activation. The diagnostic is intentionally fail-closed and currently exits 1; see [Telegram authorization evidence](../docs/hermes-credential-setup.md). No bot, token or gateway was used. Rootless Docker approval remains pending.
+
+
 2026-10-28: inspected pinned Hermes sandbox defaults and official Docker Hub metadata without pulling an image. The current source defaults to a desktop image and persistent, network-enabled containers. The newest returned official sandbox tag did not match the installed Hermes release; its candidate digest and size are recorded in the [sandbox proposal](../docs/hermes-rootless-sandbox-plan.md), not approved or deployed. A [review-only config fragment](../config/hermes-sandbox.example.yml) expresses desired non-persistence and resource values, while deliberately leaving the image, Git credentials and workspace mounts unresolved. User approval for Docker package/service and guest network changes remains pending.
 
 
