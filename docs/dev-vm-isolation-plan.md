@@ -65,11 +65,22 @@ Also confirm from an operator device: Proxmox web UI and root SSH still work, an
 - A new operator SSH into the dev VM worked; operator root SSH to Proxmox and the web UI (HTTP 200) worked; on home-services both startup units were active and the Paperless and Uptime Kuma containers healthy.
 - DHCP: a `tcpdump` on `tap100i0` during `networkctl renew eth0` showed the request and the router's reply.
 - All tests passed, so the rollback timer was stopped; the firewall remains enabled and `pve-firewall` is enabled at boot.
-- Not tested: behaviour after a Proxmox reboot (expected to persist, as configuration lives in `/etc/pve`), and the Tailscale path (the dev VM is logged out of Tailscale).
+- Reboot persistence (owner-requested Proxmox reboot, 2026-10-27): the firewall came back `enabled/running` with the same rules (host unfiltered, VM 100 rejects present for IPv4 and IPv6, no VM 130 chains). Both VMs autostarted, Paperless and Uptime Kuma returned healthy, and the full acceptance test set passed again.
+
+## Tailnet policy (applied 2026-10-27)
+
+Tunnel traffic bypasses the Proxmox rules, so the tailnet policy enforces the same boundary before the dev VM joined Tailscale:
+
+- `tagOwners`: `"tag:dev": ["autogroup:admin"]`.
+- The default grant `{"src": ["*"], "dst": ["*"], "ip": ["*"]}` was narrowed to `"src": ["autogroup:member"]`. The owner's own devices keep full access (including the dev VM and the NAS exit node); tagged devices receive no grant, so `tag:dev` cannot start connections to other tailnet devices. No other device was tagged at the time, so no existing access changed.
+- Policy `tests` (run by Tailscale on every save): the owner must reach `tag:dev:22`, home-services and the NAS; `tag:dev` must be denied home-services, the NAS and Titan. The owner saved the policy in the admin console; it validated.
+- Dev VM enrolled with `tailscale up --advertise-tags=tag:dev --accept-dns=false --accept-routes=false --ssh=false`; the owner approved the login. Prefs confirmed: tagged `tag:dev`, CorpDNS/RouteAll/RunSSH false.
+- Tests from the dev VM as `coder` over the tailnet: home-services 22/3001/8000, NAS 22/443/445/2049 and Titan 22/3389 all **blocked**; GitHub still 200. From Titan: SSH to the dev VM over the tailnet and home-services 3001/8000 **worked**. `tailscale ping` still answers (Tailscale's own path probe, not data).
+- Keep future agent guests (for example Hermes) tagged and without grants unless a specific destination is approved.
 
 ## Limits and follow-ups
 
-- **Tailscale bypass.** When the dev VM joins the tailnet, its traffic to other tailnet devices travels inside the encrypted tunnel and these rules cannot see it. Before enrolling it, add a tailnet policy that stops the dev VM reaching the home-services VM, the QNAP and any other admin device on the tailnet.
+- **Tailscale bypass.** Handled by the tailnet policy above. Any new grant that names `tag:dev` or `*` as a source would reopen the path; keep the policy tests.
 - **IPv6.** The router currently gives no global IPv6 addresses. If it starts doing so, add a rule for the LAN's global prefix.
 - **Router DNS stays reachable** (port 53 only), because the VM needs it. The router's admin pages are blocked.
 - **Agent workflow.** After this, an agent on the dev VM cannot SSH to other homelab machines. Changes go through PRs to this repository, with an operator applying them; a narrow, approved exception (for example dev → home-services SSH) can be added later if wanted.
