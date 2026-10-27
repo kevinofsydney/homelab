@@ -1,6 +1,6 @@
 # Dev VM isolation plan (security review item 6)
 
-Status: proposed 2026-10-27, awaiting owner approval. Nothing below has been applied.
+Status: **applied 2026-10-27** with the owner's approval ("apply the dev VM isolation plan as written, with the dead-man rollback, and run the acceptance tests"). See [Applied evidence](#applied-evidence). The deployed files match `proxmox/firewall/` with comment lines removed.
 
 ## Goal
 
@@ -56,6 +56,16 @@ Run from the dev VM as `coder` (and repeat one as guest root to show it makes no
 | Home-services VM TCP 22 | |
 
 Also confirm from an operator device: Proxmox web UI and root SSH still work, and Paperless and Uptime Kuma still respond on their Tailscale addresses. Record results in `agents/context.md` and mark item 6 in the security review.
+
+## Applied evidence
+
+- `host.fw` and `100.fw` written first, then the rollback timer armed (`systemd-run --on-active=600 --unit=fw-rollback pvesh set /cluster/firewall/options --enable 0`), then `cluster.fw`. `pve-firewall compile` refuses to preview while disabled, so the live ruleset was inspected immediately after enabling instead.
+- `pve-firewall status`: `enabled/running`. Host `PVEFW-INPUT` holds no rules (host unfiltered). `tap100i0-OUT` (IPv4 and IPv6) matched the planned rules in order, plus the Proxmox defaults for DHCP, MAC filter and neighbour discovery. No `tap130` chains exist.
+- From the dev VM as `coder`: Proxmox 22/8006, Proxmox IPv6 link-local 22, QNAP 22/443/445/2049, router 80/443 and home-services 22 were all **blocked**; DNS, `https://github.com` (200) and the Ubuntu archive (200) **worked**. Guest root got the same result (Proxmox 22 and QNAP 443 blocked, GitHub 200).
+- A new operator SSH into the dev VM worked; operator root SSH to Proxmox and the web UI (HTTP 200) worked; on home-services both startup units were active and the Paperless and Uptime Kuma containers healthy.
+- DHCP: a `tcpdump` on `tap100i0` during `networkctl renew eth0` showed the request and the router's reply.
+- All tests passed, so the rollback timer was stopped; the firewall remains enabled and `pve-firewall` is enabled at boot.
+- Not tested: behaviour after a Proxmox reboot (expected to persist, as configuration lives in `/etc/pve`), and the Tailscale path (the dev VM is logged out of Tailscale).
 
 ## Limits and follow-ups
 
