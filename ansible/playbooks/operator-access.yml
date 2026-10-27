@@ -1,0 +1,7 @@
+---
+- name: Add approved operator keys to the guest administrator
+  hosts: development
+  become: true
+  gather_facts: false
+  roles:
+    - operator_access

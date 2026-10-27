@@ -1,0 +1,28 @@
+---
+- name: Validate target administrator name
+  ansible.builtin.assert:
+    that:
+      - operator_ssh_user is match('^[a-z_][a-z0-9_-]*$')
+      - operator_ssh_user != 'root'
+- name: Validate public-key line format
+  ansible.builtin.assert:
+    that:
+      - item is match('^ssh-ed25519 [A-Za-z0-9+/]+={0,2}( [^\r\n]*)?$')
+  loop: "{{ operator_ssh_public_keys }}"
+- name: Verify each public key with OpenSSH before modifying access
+  ansible.builtin.command:
+    argv: [ssh-keygen, -lf, /dev/stdin]
+    stdin: "{{ item }}"
+  changed_when: false
+  check_mode: false
+  loop: "{{ operator_ssh_public_keys }}"
+- name: Add approved keys while preserving unrelated entries
+  ansible.builtin.lineinfile:
+    path: "/home/{{ operator_ssh_user }}/.ssh/authorized_keys"
+    regexp: "^ssh-ed25519 {{ item.split()[1] | regex_escape }}( .*)?$"
+    line: "{{ item }}"
+    create: false
+    owner: "{{ operator_ssh_user }}"
+    group: "{{ operator_ssh_user }}"
+    mode: '0600'
+  loop: "{{ operator_ssh_public_keys }}"

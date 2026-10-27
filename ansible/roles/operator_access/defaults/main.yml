@@ -1,0 +1,3 @@
+---
+operator_ssh_user: devops
+operator_ssh_public_keys: []
