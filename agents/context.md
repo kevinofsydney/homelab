@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: prepared separate rootless Docker package and user-service Ansible playbooks. Both passed syntax checks; a package-stage check on VM 101 returned `ok=11 changed=2 failed=0 skipped=2`, skipping actual package installation because the Docker repository is not present. No packages, user service or networking were changed. The user-service playbook is syntax-checked only; its reviewed Docker setup tool starts a rootless service, so applying either playbook still requires the pending explicit approval. No sandbox image or digest has been verified. See [rootless sandbox proposal](../docs/hermes-rootless-sandbox-plan.md).
+
+
 2026-10-28: the owner supplied the n8n cloud base URL and personal Telegram user ID. The URL is recorded in ignored site inventory; its unauthenticated HTTPS endpoint returned 200 from VM 101. The owner ID was entered through `hermes-secret owner` into the private guest dotenv; do not confuse the separately supplied bot ID with the owner ID. No bot token or provider key was entered. Prepared a [rootless sandbox proposal](../docs/hermes-rootless-sandbox-plan.md); no Docker or network changes were applied. Verify the owner-only and private-chat policy at gateway activation.
 
 

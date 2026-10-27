@@ -1,0 +1,97 @@
+---
+- name: Configure dedicated rootless Docker user service
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require reviewed target and operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+          - ansible_facts['distribution'] == 'Ubuntu'
+          - ansible_facts['distribution_version'] == '24.04'
+
+    - name: Inspect rootless setup tool
+      ansible.builtin.stat:
+        path: /usr/bin/dockerd-rootless-setuptool.sh
+      register: hermes_rootless_tool
+
+    - name: Require the reviewed packages first
+      ansible.builtin.assert:
+        that: hermes_rootless_tool.stat.exists and hermes_rootless_tool.stat.executable
+
+    - name: Get unprivileged Hermes UID
+      ansible.builtin.command:
+        argv: [id, -u, hermes]
+      register: hermes_uid
+      changed_when: false
+
+    - name: Require non-root numeric UID
+      ansible.builtin.assert:
+        that:
+          - hermes_uid.stdout is match('^[1-9][0-9]*$')
+
+    - name: Inspect existing user service and lingering
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: [/home/hermes/.config/systemd/user/docker.service, /var/lib/systemd/linger/hermes]
+      register: hermes_rootless_state
+
+    - name: Prepare user service configuration directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: hermes
+        group: hermes
+        mode: '0700'
+      loop:
+        - /home/hermes/.config
+        - /home/hermes/.config/systemd
+        - /home/hermes/.config/systemd/user
+        - /home/hermes/.config/systemd/user/docker.service.d
+
+    - name: Persist rootless network safety settings
+      ansible.builtin.copy:
+        dest: /home/hermes/.config/systemd/user/docker.service.d/network.conf
+        owner: hermes
+        group: hermes
+        mode: '0600'
+        content: |
+          [Service]
+          Environment=DOCKERD_ROOTLESS_ROOTLESSKIT_NET=slirp4netns
+          Environment=DOCKERD_ROOTLESS_ROOTLESSKIT_DISABLE_HOST_LOOPBACK=true
+
+    - name: Enable Hermes user manager at boot
+      ansible.builtin.command:
+        argv: [loginctl, enable-linger, hermes]
+      when: not hermes_rootless_state.results[1].stat.exists
+
+    - name: Wait for the user's runtime bus
+      ansible.builtin.wait_for:
+        path: "/run/user/{{ hermes_uid.stdout }}/bus"
+        timeout: 45
+      when: not ansible_check_mode
+
+    - name: Install rootless service without a rootful daemon
+      become_user: hermes
+      ansible.builtin.command:
+        argv: [/usr/bin/dockerd-rootless-setuptool.sh, install]
+        creates: /home/hermes/.config/systemd/user/docker.service
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ hermes_uid.stdout }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ hermes_uid.stdout }}/bus"
+        DOCKERD_ROOTLESS_ROOTLESSKIT_NET: slirp4netns
+        DOCKERD_ROOTLESS_ROOTLESSKIT_DISABLE_HOST_LOOPBACK: 'true'
+      when: not ansible_check_mode
+
+    - name: Ensure rootless service starts at user-manager boot
+      become_user: hermes
+      ansible.builtin.systemd_service:
+        name: docker.service
+        scope: user
+        enabled: true
+        state: started
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ hermes_uid.stdout }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ hermes_uid.stdout }}/bus"
+      when: not ansible_check_mode

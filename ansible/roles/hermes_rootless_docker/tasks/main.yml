@@ -1,0 +1,72 @@
+---
+- name: Require reviewed platform and target
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['distribution_version'] == '24.04'
+      - ansible_facts['architecture'] == 'x86_64'
+      - ansible_facts['hostname'] == 'hermes-agent'
+
+- name: Inspect pre-existing rootful services
+  ansible.builtin.service_facts:
+
+- name: Refuse to change any running rootful container service
+  ansible.builtin.assert:
+    that:
+      - "item not in ansible_facts.services or ansible_facts.services[item].state != 'running'"
+  loop: [docker.service, docker.socket, containerd.service]
+
+- name: Inspect existing repository and key directory
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: [/etc/apt/sources.list.d/docker.list, /etc/apt/keyrings]
+  register: hermes_docker_existing
+
+- name: Ensure keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Fetch reviewed Docker signing key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    checksum: "sha256:{{ hermes_docker_key_sha256 }}"
+    mode: '0644'
+  when: not ansible_check_mode or hermes_docker_existing.results[1].stat.isdir | default(false)
+
+- name: Configure Docker repository for Ubuntu Noble
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    mode: '0644'
+    content: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable
+
+- name: Install reviewed packages without starting rootful services
+  ansible.builtin.apt:
+    name: "{{ hermes_rootless_packages }}"
+    state: present
+    update_cache: true
+    policy_rc_d: 101
+  when: not ansible_check_mode or hermes_docker_existing.results[0].stat.exists
+
+- name: Refresh service inventory
+  ansible.builtin.service_facts:
+
+- name: Keep system-wide container services stopped and disabled
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: [docker.service, docker.socket, containerd.service]
+  when: item in ansible_facts.services
+
+- name: Inspect rootful Docker socket
+  ansible.builtin.stat:
+    path: /var/run/docker.sock
+  register: hermes_rootful_socket
+
+- name: Refuse a rootful Docker socket
+  ansible.builtin.assert:
+    that: not hermes_rootful_socket.stat.exists

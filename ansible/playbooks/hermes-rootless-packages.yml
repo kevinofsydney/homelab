@@ -1,0 +1,7 @@
+---
+- name: Stage rootless Docker packages on the dedicated Hermes guest
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  roles:
+    - hermes_rootless_docker

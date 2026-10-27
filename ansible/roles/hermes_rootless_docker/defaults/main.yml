@@ -1,0 +1,9 @@
+---
+hermes_docker_key_sha256: 1500c1f56fa9e26b9b8f42452a553675796ade0807cdce11975eb98170b3a570
+hermes_rootless_packages:
+  - 'docker-ce=5:29.9.2-1~ubuntu.24.04~noble'
+  - 'docker-ce-cli=5:29.9.2-1~ubuntu.24.04~noble'
+  - 'docker-ce-rootless-extras=5:29.9.2-1~ubuntu.24.04~noble'
+  - 'containerd.io=2.4.2-3~ubuntu.24.04~noble'
+  - uidmap
+  - slirp4netns
