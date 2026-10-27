@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: installed dormant Hermes CLI v0.22.5 at pinned commit `bf0203a794a07aac3ff764972ab9087baa4e4f4e` on VM 101 under non-sudo `hermes` (only its own group). The first Ansible apply created the account and native dependency but hit GitHub HTTP 429 fetching the installer. The local cached installer at the pinned source commit matched the role's SHA-256 and was staged on the guest; the subsequent apply succeeded (`ok=11 changed=1 failed=0`) and verified the source commit. `hermes --version` succeeded; no Hermes process or service unit was found. No provider or Telegram credentials, gateway or n8n integration were configured. Stronger public-destination isolation, sandbox tests and reboot acceptance remain pending.
+
+
 2026-10-28: owner approved the Hermes VM-specific initial firewall. Guest SSH identity was verified from a read-only disk mapping and the missing QEMU guest agent was installed; cloud-init is done and Proxmox guest-agent ping succeeds. The initial private-network and IPv6 egress restrictions were applied with a VM-only timed rollback, and the live rejection counters, DNS, public HTTPS, DHCP renewal, operator SSH and existing application health were checked. The timer was cancelled after these initial checks. Agent sandbox and reboot tests, and the stronger public-destination allowlist, are not yet complete. The operator computer could not reach Paperless over Tailscale, though Paperless and Kuma were healthy and returned 302 from their own VM. See [firewall evidence](../docs/hermes-isolation-preparation.md). No Hermes gateway or credentials were configured.
 
 
