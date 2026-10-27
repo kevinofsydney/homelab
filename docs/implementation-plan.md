@@ -4,7 +4,26 @@ Status: prepared source only, 2026-10-27. No infrastructure deployment is author
 
 ## Blueprint review boundary
 
-`docs/homelab-blueprint.md` is absent from the tracked checkout and was not supplied with the request. A complete blueprint review is blocked pending that document. This plan uses the operator's brief and existing architecture, security, storage and installation guides; it must be reconciled with the original blueprint before deployment. Do not reconstruct the missing document and present it as the original.
+The operator supplied the original [blueprint](homelab-blueprint.md), dated 2026-10-26, on 2026-10-27. It is preserved unchanged as a design reference and has now been reviewed in full against the repository. Embedded checklists and commands are proposed work, not authorization to execute infrastructure changes. Current root `AGENTS.md` and explicit operator instructions govern execution.
+
+## Blueprint reconciliation
+
+| Blueprint item | Review decision and remaining work |
+| --- | --- |
+| Private repository and Proxmox installation | Repository exists; operator reports installation complete. Do not repeat the destructive installer. Verify live identity/version and hardware health |
+| Four persistent VMs with illustrative IDs | Retain phased sizing in `docs/architecture.md`: one 8 GiB development guest first. The proposed ranges total 22–28 GiB before host overhead; upper allocations leave insufficient headroom for a 4–6 GiB host reserve and workers. IDs are examples until checked for availability |
+| QNAP shares and per-service credentials | Paths in the blueprint are illustrative. Existing NFS pattern requires exact exports, client restrictions and numeric UID/GID mapping; service-account passwords alone do not authenticate traditional NFS. No share creation or Plex change is approved |
+| No automatic merge | Superseded for `kevinofsydney/homelab` by the owner's later standing authorization in root `AGENTS.md`. Other repositories keep their own policy; draft worker PRs require trusted review and passing current-head checks. Production deployment still requires explicit approval |
+| Guest firewall, Docker, Tailscale and updates | Planned privileged changes, not completed by source scaffolding. Prepare reviewed package versions and change plans; prove a second SSH session before restrictions; do not give `coder` Docker access |
+| Hermes Agent and Telegram | Intended role clarified: evaluate an assistant with DeepSeek/OpenRouter, allowlisted Telegram users, budgets and narrow tools. Exact upstream repository/release, approved Telegram identity and spend ceiling remain missing; no installation or bot credential use yet |
+| Grok GitHub connector or public MCP/webhook | Optional later integrations. Verify current upstream capabilities before implementation. Prefer issue creation through narrow permissions; public endpoints require separate ingress/security review and explicit approval |
+| Paperless built-in AI and external Paperless-AI status | Time-sensitive claims in the source document have not been independently verified in this review. Check official release documentation and upstream maintenance status before selecting features. Keep cloud AI disabled pending document privacy choices |
+| Immich, n8n, Audiobookshelf/Kavita | Intended media candidates clarified; final selection and release-compatible stacks remain pending. Use the reusable service contract rather than inventing deployable image sets or exports |
+| Public web app production | Preserve managed-hosting preference; hosting, the accounting system edition/import schema, billing rules and privacy/recovery requirements remain undecided. Use synthetic data until approved for users use |
+| QNAP-first backups | Initial staging target only. Verify an isolated restore and add independent encrypted backups before relying on it for irreplaceable/public data; retention changes require approval |
+| Update reports and optional Pi-hole/local models | Report-only checks can be prepared later; no scheduled jobs or broad automatic upgrades are enabled. Retain NextDNS and defer optional DNS/inference changes |
+
+All blueprint sections, including phase acceptance checklists, suggested structure, unresolved facts and documentation links, were reviewed. External URLs are reference leads, not verified current product guarantees. Source validation does not satisfy the blueprint's live backup, isolation or application acceptance tests.
 
 The existing repository already contains root `AGENTS.md`, cloud-init/template instructions, a plan-by-default Proxmox API provisioner, Ansible development and backup-mount roles, a non-sudo coding account, pinned-version CLI installer, Paperless Compose and backup scripts, CI and an issue-to-PR design. Preserve these foundations. They are prepared configuration, not evidence of installed services.
 
@@ -14,7 +33,6 @@ The operator reports Proxmox installed on the Dell (i5-12500T, 32 GB RAM, 512 GB
 
 | Input required | Why it blocks deployment |
 | --- | --- |
-| Complete original blueprint | Reconcile intended services, priorities and resource allocation |
 | Proxmox version, trusted CA or independently verified host key, actual node/bridge/storage IDs | Identify the host and avoid altering the wrong resource |
 | Available VM/template IDs, Ubuntu image checksum, SSH public key, guest DHCP reservation | Prepare a specific clone plan without collisions or invented values |
 | QNAP address, QTS version, existing shares, free space, dedicated export paths and numeric ownership | Probe the correct NAS and preserve Plex/storage |
@@ -54,4 +72,4 @@ The worker dispatcher remains a design rather than an enabled automation. Use im
 
 ## Next operator review
 
-Supply the missing blueprint and inventory above, then review the trusted read-only inventory results and a specific VM/template plan. Infrastructure execution stays paused until explicit approval. Follow [installation](install.md) for commands and [validation](validation.md) for post-change evidence.
+Supply the remaining site inventory above, then review the trusted read-only inventory results and a specific VM/template plan. Infrastructure execution stays paused until explicit approval. Follow [installation](install.md) for commands and [validation](validation.md) for post-change evidence.
