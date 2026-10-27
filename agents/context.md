@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: the dev VM's recurring `grub2-common.service` failure is fixed. The 26.04 release upgrade left the obsolete 24.04 SysV script `/etc/init.d/grub-common` enabled, and it raced the new native unit at every boot, both rewriting `/boot/grub/grubenv`. The script was backed up to `/root/obsolete-conffiles/` and removed with its rc links; two consecutive reboots passed with the guest `running`. Expect the same leftover when home-services is upgraded to 26.04: check `dpkg-query -W -f='${Conffiles}' grub-common` for `obsolete` entries afterwards.
+
 2026-10-27: owner-requested Proxmox reboot confirmed the firewall, VM autostart, Paperless and Uptime Kuma all recover unaided, and the dev VM isolation tests pass after boot. The tailnet policy now gives tagged devices no access; the dev VM was enrolled as `tag:dev` and cannot reach home-services, the NAS or Titan over Tailscale, while the owner's devices still reach it. Details in the [dev VM isolation plan](../docs/dev-vm-isolation-plan.md). Open issue: after each dev VM boot `grub2-common.service` fails because `/boot/grub/grubenv` is invalid or empty at boot despite a clean shutdown (seen on two consecutive boots); `/boot` is ext4 with metadata_csum, BIOS boot, grub 2.14. Root cause not yet found; impact is a `degraded` state and no GRUB recordfail fallback.
 
 The actionable list — with each item's acceptance criteria and the approval it needs — lives in [open work](todo.md). Update it when an item closes instead of only appending a dated entry here; the entries below remain the evidence trail.
