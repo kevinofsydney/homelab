@@ -1,0 +1,7 @@
+---
+- name: Install dormant Hermes CLI on dedicated agent VM
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  roles:
+    - hermes_cli

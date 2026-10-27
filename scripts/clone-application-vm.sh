@@ -9,6 +9,13 @@ set -euo pipefail
 : "${APP_VM_ID:?Set an available VM ID}"
 : "${APP_VM_NAME:?Set a reviewed guest name}"
 : "${SSH_PUBLIC_KEYS_FILE:?Set host-local file containing approved public keys}"
+: "${APP_VM_CORES:=2}"
+: "${APP_VM_MEMORY_MIB:=4096}"
+: "${APP_VM_DISK_GIB:=60}"
+for value in "$APP_VM_CORES" "$APP_VM_MEMORY_MIB" "$APP_VM_DISK_GIB"; do
+  [[ "$value" =~ ^[1-9][0-9]{0,4}$ ]] || { echo 'Invalid resource value' >&2; exit 2; }
+done
+(( APP_VM_CORES <= 16 && APP_VM_MEMORY_MIB >= 512 && APP_VM_MEMORY_MIB <= 16384 && APP_VM_DISK_GIB >= 8 && APP_VM_DISK_GIB <= 128 )) || { echo 'Resource value outside permitted bounds' >&2; exit 2; }
 for name in "$PVE_NODE" "$PVE_STORAGE" "$PVE_BRIDGE" "$APP_VM_NAME"; do
   [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || exit 2
 done
@@ -33,12 +40,12 @@ disk_volume=$(printf '%s\n' "$config" | awk -F ': ' '$1 == "scsi0" {split($2,a,"
 [[ -n "$disk_volume" ]] || exit 2
 disk_path=$(pvesm path "$disk_volume") || exit 2
 disk_bytes=$(qemu-img info --output=json "$disk_path" | python3 -c 'import json,sys; print(json.load(sys.stdin)["virtual-size"])') || exit 2
-[[ "$disk_bytes" =~ ^[0-9]+$ ]] && (( disk_bytes <= 60 * 1024 * 1024 * 1024 )) || { echo 'Template disk is larger than 60 GiB' >&2; exit 2; }
-# Keep 20% of the thin-pool capacity after allowing for the full 60 GiB virtual disk.
-pvesm status --storage "$PVE_STORAGE" | awk 'NR==2 { if ($3 != "active" || ($6 - 60*1024*1024) < ($4 * 0.20)) exit 1; seen=1 } END { if (!seen) exit 1 }' || { echo 'Insufficient reviewed storage headroom' >&2; exit 2; }
-echo "PLAN: clone template $TEMPLATE_ID to $APP_VM_ID ($APP_VM_NAME); 2 vCPU, 4096 MiB, 60 GiB, DHCP, existing bridge $PVE_BRIDGE; leave stopped and autostart off."
+[[ "$disk_bytes" =~ ^[0-9]+$ ]] && (( disk_bytes <= APP_VM_DISK_GIB * 1024 * 1024 * 1024 )) || { echo 'Template disk is larger than requested disk' >&2; exit 2; }
+# Keep 20% of the thin-pool capacity after allowing for the full requested virtual disk.
+pvesm status --storage "$PVE_STORAGE" | awk -v disk_gib="$APP_VM_DISK_GIB" 'NR==2 { if ($3 != "active" || ($6 - disk_gib*1024*1024) < ($4 * 0.20)) exit 1; seen=1 } END { if (!seen) exit 1 }' || { echo 'Insufficient reviewed storage headroom' >&2; exit 2; }
+echo "PLAN: clone template $TEMPLATE_ID to $APP_VM_ID ($APP_VM_NAME); ${APP_VM_CORES} vCPU, ${APP_VM_MEMORY_MIB} MiB, ${APP_VM_DISK_GIB} GiB, DHCP, existing bridge $PVE_BRIDGE; leave stopped and autostart off."
 [[ "${1:-}" == --apply ]] || { echo 'PLAN ONLY; no writes made.'; exit 0; }
 qm clone "$TEMPLATE_ID" "$APP_VM_ID" --full 1 --name "$APP_VM_NAME" --storage "$PVE_STORAGE"
-qm set "$APP_VM_ID" --cores 2 --memory 4096 --net0 "virtio,bridge=$PVE_BRIDGE,firewall=1" --ciuser devops --sshkeys "$SSH_PUBLIC_KEYS_FILE" --ipconfig0 ip=dhcp --ciupgrade 0 --onboot 0
-qm disk resize "$APP_VM_ID" scsi0 60G
+qm set "$APP_VM_ID" --cores "$APP_VM_CORES" --memory "$APP_VM_MEMORY_MIB" --net0 "virtio,bridge=$PVE_BRIDGE,firewall=1" --ciuser devops --sshkeys "$SSH_PUBLIC_KEYS_FILE" --ipconfig0 ip=dhcp --ciupgrade 0 --onboot 0
+qm disk resize "$APP_VM_ID" scsi0 "${APP_VM_DISK_GIB}G"
 echo "Created VM $APP_VM_ID stopped. Inspect configuration; capture the serial console when starting it."

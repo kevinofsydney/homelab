@@ -22,7 +22,7 @@ The owner talks to one agent over Telegram and it: clones and pulls repositories
 
 A dedicated guest (next unused VM ID) cloned from the proven Ubuntu 24.04.5 template — not the development VM and not the application VM. Proposed 4 vCPU / 8 GiB / 80 GiB, confirmed against real capacity first; with 8 GiB on VM 100 and 4 GiB on VM 130 that leaves roughly 12 GiB of the host's 32 GiB for Proxmox.
 
-`scripts/clone-application-vm.sh` hardcodes 2 vCPU / 4 GiB / 60 GiB, so either a parameterized, plan-by-default provisioner lands first or that allocation is accepted explicitly.
+The plan-first `scripts/clone-application-vm.sh` supports explicit `APP_VM_CORES`, `APP_VM_MEMORY_MIB` and `APP_VM_DISK_GIB` values; defaults remain 2 vCPU / 4 GiB / 60 GiB. For the proposed allocation use `4`, `8192` and `80` respectively. Its capacity check uses the requested disk size; separately verify live host memory and storage capacity before applying. It leaves the VM stopped and autostart disabled. `ansible/playbooks/hermes-agent.yml` prepares the existing pinned CLI in a separate non-administrative account on Ubuntu 24.04; it does not configure credentials or start a gateway. Both are prepared only: creating or configuring a VM and changing firewall rules require operator approval.
 
 ## Isolation
 

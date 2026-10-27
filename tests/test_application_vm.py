@@ -9,7 +9,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts/clone-application-vm.sh"
 
 
 class ApplicationVmTests(unittest.TestCase):
-    def run_plan(self, occupied=False, free="300000000", template=True, apply=False, disk_bytes=3758096384):
+    def run_plan(self, occupied=False, free="300000000", template=True, apply=False, disk_bytes=3758096384, resources=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             changes = root / "changes"
@@ -21,7 +21,7 @@ class ApplicationVmTests(unittest.TestCase):
                 "pvesm": f"if [ \"$1\" = path ]; then echo /fake/disk; else printf 'Name Type Status Total Used Available %%\\nstore lvmthin active 350000000 1 {free} 0\\n'; fi",
                 "qemu-img": f"printf '{{\"virtual-size\":{disk_bytes}}}\\n'",
                 "qm": ('if [ "$1" = config ]; then printf "template: 1\\nide2: store:cloudinit\\nscsi0: store:disk\\n"; '
-                       'else echo "$1" >> "$CHANGES"; fi') if template else 'if [ "$1" = config ]; then echo "scsi0: store:disk"; else echo "$1" >> "$CHANGES"; fi',
+                       'else echo "$*" >> "$CHANGES"; fi') if template else 'if [ "$1" = config ]; then echo "scsi0: store:disk"; else echo "$*" >> "$CHANGES"; fi',
             }
             for name, body in commands.items():
                 path = root / name
@@ -33,6 +33,7 @@ class ApplicationVmTests(unittest.TestCase):
                        CHANGES=str(changes), PVE_NODE="testnode", PVE_STORAGE="store",
                        PVE_BRIDGE="testbridge", TEMPLATE_ID="9000", APP_VM_ID="130",
                        APP_VM_NAME="testguest", SSH_PUBLIC_KEYS_FILE=str(key))
+            env.update(resources or {})
             result = subprocess.run(["bash", str(SCRIPT)] + (["--apply"] if apply else []),
                                     env=env, capture_output=True, text=True)
             return result, changes.read_text().splitlines() if changes.exists() else []
@@ -41,6 +42,26 @@ class ApplicationVmTests(unittest.TestCase):
         result, changes = self.run_plan()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("PLAN ONLY", result.stdout)
+        self.assertEqual(changes, [])
+
+    def test_custom_resources_reach_plan_and_apply(self):
+        resources = {"APP_VM_CORES": "4", "APP_VM_MEMORY_MIB": "8192", "APP_VM_DISK_GIB": "80"}
+        result, changes = self.run_plan(resources=resources, apply=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("4 vCPU, 8192 MiB, 80 GiB", result.stdout)
+        self.assertTrue(any("--cores 4 --memory 8192" in line for line in changes))
+        self.assertTrue(any("scsi0 80G" in line for line in changes))
+
+    def test_invalid_resources_block_writes(self):
+        for value in ("0", "129", "1x", "0008"):
+            with self.subTest(value=value):
+                result, changes = self.run_plan(resources={"APP_VM_DISK_GIB": value}, apply=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(changes, [])
+
+    def test_larger_disk_changes_headroom_check(self):
+        result, changes = self.run_plan(free="140000000", resources={"APP_VM_DISK_GIB": "80"}, apply=True)
+        self.assertNotEqual(result.returncode, 0)
         self.assertEqual(changes, [])
 
     def test_occupied_id_blocks_apply(self):
