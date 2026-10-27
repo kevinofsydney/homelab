@@ -1,0 +1,7 @@
+---
+- name: Install private access client on application guest
+  hosts: applications
+  become: true
+  gather_facts: true
+  roles:
+    - tailscale_client

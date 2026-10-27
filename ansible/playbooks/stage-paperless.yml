@@ -1,0 +1,74 @@
+---
+- name: Stage Paperless configuration without starting containers
+  hosts: applications
+  become: true
+  gather_facts: false
+  vars:
+    paperless_install_root: /opt/homelab
+  tasks:
+    - name: Require verified site inputs
+      ansible.builtin.assert:
+        that:
+          - paperless_nfs_source is defined
+          - paperless_tailscale_ip is defined
+          - paperless_service_uid is defined
+          - paperless_service_gid is defined
+    - name: Create configuration and script directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - "{{ paperless_install_root }}"
+        - "{{ paperless_install_root }}/compose"
+        - "{{ paperless_install_root }}/compose/paperless"
+        - "{{ paperless_install_root }}/scripts"
+    - name: Install reviewed Compose and environment example
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../compose/paperless/{{ item }}"
+        dest: "{{ paperless_install_root }}/compose/paperless/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - compose.yml
+        - .env.example
+    - name: Install deployment and mount gates
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../scripts/{{ item }}"
+        dest: "{{ paperless_install_root }}/scripts/{{ item }}"
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - check-mount.sh
+        - deploy-paperless.sh
+    - name: Generate initial private configuration on the guest only
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import os, pathlib, secrets, sys
+            root = pathlib.Path(sys.argv[1]); target = root / '.env'
+            text = (root / '.env.example').read_text()
+            changes = {'REPLACE_NAS_HOST:/REPLACE_PAPERLESS_EXPORT': sys.argv[2],
+                       'REPLACE_TAILSCALE_IP': sys.argv[3],
+                       'REPLACE_TAILSCALE_NAME': sys.argv[3],
+                       'REPLACE_VERIFIED_UID': sys.argv[4], 'REPLACE_VERIFIED_GID': sys.argv[5],
+                       'REPLACE_GENERATED_SECRET': None}
+            for old, value in changes.items():
+                if value is not None: text = text.replace(old, value)
+            text = text.replace('REPLACE_GENERATED_SECRET', secrets.token_urlsafe(36), 1)
+            text = text.replace('REPLACE_GENERATED_SECRET', secrets.token_urlsafe(48), 1)
+            fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w') as stream: stream.write(text)
+          - "{{ paperless_install_root }}/compose/paperless"
+          - "{{ paperless_nfs_source }}"
+          - "{{ paperless_tailscale_ip }}"
+          - "{{ paperless_service_uid | string }}"
+          - "{{ paperless_service_gid | string }}"
+        creates: "{{ paperless_install_root }}/compose/paperless/.env"
+      no_log: true
