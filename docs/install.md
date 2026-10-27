@@ -49,6 +49,6 @@ Outside current scope by explicit operator request on 2026-10-27. Do not execute
 
 Create a dedicated NFS backup export; preserve Plex shares. Add it to Proxmox as backup storage. To configure it on the development VM, fill `qnap_backup_server` and `qnap_backup_export` in the ignored Ansible inventory, check `ansible/playbooks/qnap-backup-mount.yml` with `--check --diff`, then apply only after reviewing the network/storage change. The role writes a reviewed fstab entry; on the guest run `sudo mount /mnt/qnap-backups` and `scripts/validate-backup.sh /mnt/qnap-backups '<QNAP_HOST>:<BACKUP_EXPORT>'`. Configure a Proxmox backup schedule and restore a test VM as described in `docs/disaster-recovery.md`. Record results. Add encrypted off-NAS backup before storing irreplaceable data.
 
-## 6. First application, later milestone
+## 6. Private applications
 
-After the foundation works, prepare a separate app VM and read `compose/paperless/README.md`. Verify its mount, local SSD directories, image digests and secret file. Run `scripts/deploy-paperless.sh` for validation, then use `--apply` only after approval. Test a backup and isolated restore before trusting the archive.
+The existing application VM runs Paperless and Uptime Kuma. Read the [Paperless handoff](../agents/handoffs/paperless-deployment.md), [Paperless runbook](../compose/paperless/README.md) and [Uptime Kuma runbook](../compose/uptime-kuma/README.md) before changing them. Both use private Tailscale bindings and separately enabled guest startup services; the Proxmox VM itself does not autostart after a host reboot. Check current container health and mount identity before any changes. QNAP backups and recovery testing remain outside scope until the operator requests them.

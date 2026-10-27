@@ -6,7 +6,7 @@ Reproducible starting point for a single Dell OptiPlex Proxmox host, with an Ubu
 
 Read [the supplied blueprint](docs/homelab-blueprint.md) with [the first implementation plan](docs/implementation-plan.md) for its reconciliation, current gaps, connectivity evidence and approval gates. The blueprint is a design reference; current repository safety rules and explicit operator authorization govern execution.
 
-The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. Backups, isolation and application deployment are still pending.
+The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. Isolation and backup/recovery validation remain pending; private Paperless and Uptime Kuma are deployed as recorded in the service runbooks.
 
 A separate [home-services VM](docs/application-vm.md) runs Docker and private Paperless; see the [live handoff](agents/handoffs/paperless-deployment.md) for its current state and recovery steps. Self-hosted n8n and QNAP backups are outside the current scope until the operator requests them; inactive n8n files remain for possible future use.
 

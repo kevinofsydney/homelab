@@ -1,6 +1,6 @@
 # Reusable private application pattern
 
-Paperless is the prepared reference implementation. Immich, n8n and media stacks remain planned until their release-specific upstream configurations and site inputs are reviewed. This contract applies to each new stack; it does not activate a service.
+Paperless and Uptime Kuma are deployed private reference implementations; their runbooks distinguish verified behavior from remaining checks. Immich and media stacks remain planned. Self-hosted n8n is outside current scope until the operator requests it. This contract applies to each new stack; it does not activate a service.
 
 For each `compose/<service>/` directory, provide `compose.yml`, `.env.example` with placeholders, and a runbook covering requirements, data mapping, startup checks, health, backup, isolated restore, upgrade and rollback. Put actual addresses, immutable reviewed images and secrets in ignored configuration; restrict secret-file permissions. Never commit the generated file.
 
