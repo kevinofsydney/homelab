@@ -55,3 +55,12 @@ Sandbox test (the pinned image, run as `hermes` with `--cpus 2 --memory 4096m` a
 Finding: the sandbox **can** connect to the Hermes VM's own LAN address on TCP 22. That traffic stays inside the guest, so the Proxmox VM firewall does not see it. Guest SSH is key-only, so the risk is low; closing it needs a guest nftables rule rejecting `hermes`-owned traffic to private ranges, which requires approval.
 
 Not yet verified: Hermes itself launching a sandbox session (no model provider is configured), the gateway, and any credential other than the owner ID.
+
+## Provider, model and web search (2026-10-28)
+
+- `EXA_API_KEY` entered by the owner via `hermes-secret exa`: one entry, length 36, `.env` owned by `hermes`, mode 600. A direct Exa `/search` call with it returned HTTP 200 and a result.
+- `OPENROUTER_API_KEY` entered by the owner via `hermes-secret openrouter`: one entry. OpenRouter `GET /api/v1/key` reported `limit: 10`, `limit_reset: monthly`, `usage: 0`, not free tier.
+- `model.provider: openrouter`, `model.default: deepseek/deepseek-v4.1-flash-1017` (added to `hermes-sandbox-config.yml`).
+- One-shot test `hermes chat -q "Reply with exactly: HERMES_OK" -t clarify`: reply `HERMES_OK`, 8 s, no tool calls.
+- One-shot test with `-t web` asking for the Hermes docs URL: the model called `web_search`, the result came back wrapped as `untrusted_tool_result`, and the reply was `https://hermes-agent.nousresearch.com/docs/`.
+- Not yet tested: terminal/sandbox use from a model session, the Telegram gateway, GitHub and n8n.

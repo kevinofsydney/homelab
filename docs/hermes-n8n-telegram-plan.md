@@ -8,6 +8,7 @@ Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created a
 | --- | --- |
 | Runtime | Hermes, pinned release, using the existing `ansible/roles/hermes_cli` |
 | Model | Latest DeepSeek flash. The exact model identifier is resolved from the provider catalogue at deploy time and is not assumed here; `deepseek-v4.1-flash` in the handoff is the last recorded value, not a promise |
+| Model (set 2026-10-28) | `deepseek/deepseek-v4.1-flash-1017` via OpenRouter: the newest dated DeepSeek flash snapshot in the catalogue that day ($0.15/$0.60 per million tokens, tool calling). Moving `~…-latest` aliases avoided |
 | Provider and budget | OpenRouter in front of that model, chosen for a **hard $10/month key limit**. DeepSeek direct is prepaid balance, which caps spend only while auto-top-up stays off |
 | Availability | 24/7 with `onboot 1` and `startup order=3` on the new guest, gateway supervised as a systemd unit |
 | Git authority | GitHub App installation scoped to this repository: contents and pull requests only. **Opens pull requests and does not merge them** |

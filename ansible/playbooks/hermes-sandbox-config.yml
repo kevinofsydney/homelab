@@ -25,6 +25,8 @@
       telemetry.shared_metrics.enabled: "false"
       telemetry.shared_metrics.send: "false"
       web.backend: exa
+      model.provider: openrouter
+      model.default: deepseek/deepseek-v4.1-flash-1017
   tasks:
     - name: Require the reviewed guest
       ansible.builtin.assert:
