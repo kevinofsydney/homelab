@@ -20,6 +20,8 @@ Rules for maintaining this file:
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
+| 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | `codex sandbox` fails with EPERM for every command, so codex currently runs unconfined as `coder`; fixing it would restore `workspace-write` | No — guest-local diagnosis | ~1 h | Open; worked around |
+| 14 | Add DeepSeek Harness to the pinned CLI installer | `dsh` 0.2.1-rc.2 was installed by hand; the manifest and installer cover Node, Codex and OpenCode only, so a rebuild would silently omit it | No — repo change, `bash -n` and tests | 30 min | Open; installed manually |
 
 ## Detail
 
@@ -67,6 +69,20 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - The owner revokes the old token, enters the new one with `hermes-secret telegram`; `TELEGRAM_ALLOWED_USERS` already holds the owner ID. Never set `GATEWAY_ALLOW_ALL_USERS`.
 - Done when: the gateway runs as a supervised service that survives a restart; Telegram `getMe` matches the intended bot; the owner gets a reply in a private chat; a message from another account gets no reply and is logged as unauthorised; adding the bot to a group is refused.
 
+### 13. codex sandbox failure on the dev VM
+
+`codex sandbox -- /bin/true` fails with `Error: Permission denied (os error 13)` for every command, so every model-generated shell command is refused. Ruled out: the AppArmor userns restriction (disabled temporarily, still failed), missing userns support (`unshare -Ur` succeeds when the restriction is off), seccomp on the account, and a broken bubblewrap (`bwrap --dev-bind / / -- <codex> --version` works). An AppArmor `userns` profile for the vendored binaries changed nothing and was removed.
+
+- Workaround in place: `sandbox_mode = "danger-full-access"` and `approval_policy = "on-request"` in `/home/coder/.codex/config.toml`, so commands run unconfined as `coder`. See [the decision record](../docs/dev-vm-coder-capabilities.md).
+- Next: capture the failing `bwrap` invocation (strace on `clone3`/`clone`/`execve`, or log the argv bwrap receives) and compare it with the working manual invocation.
+- Done when: the cause is identified, `workspace-write` is restored, and one command is observed running under the sandbox.
+- Not done from the workaround: the guest is currently running without codex's sandbox.
+
+### 14. DeepSeek Harness in the pinned installer
+
+- `dsh` 0.2.1-rc.2 was installed by hand under `coder` on the dev VM (2026-10-28, see [coder capabilities](../docs/dev-vm-coder-capabilities.md)). `config/ai-cli-versions.json` and `scripts/install-ai-cli.sh` cover only Node, Codex and OpenCode.
+- Done when: the manifest pins `dsh` with a reviewed checksum, the installer installs it, `bash -n` and the tests pass, and a check run on the dev VM reports no change.
+
 ## Closed
 
 Recorded here so a fresh agent does not redo them. Dates are the day the work was verified.
@@ -81,7 +97,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 | Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
 | dev VM release upgrade to 26.04.1 LTS | `dpkg --audit` empty, 7.0.0-38 kernel, no pending upgrades; the interrupted run stopped at the upgrader's "remove obsolete packages" prompt |
-| dev VM GRUB environment block | Root cause: the 24.04 SysV script `/etc/init.d/grub-common` (an obsolete conffile after the 26.04 upgrade) still ran at boot alongside the new `grub2-common.service`; both rewrote `grubenv` within 2 ms, so one read a half-written or deleted file. Script backed up to `/root/obsolete-conffiles/`, rc links removed, file deleted; two consecutive reboots then showed `grub2-common.service` `Result=success` and the guest `running` (2026-10-28). Home-services (24.04) has only the script, so is unaffected until it is upgraded |
+| dev VM GRUB environment block | Two causes, both fixed on 2026-10-28. (1) The 24.04 SysV script `/etc/init.d/grub-common`, an obsolete conffile after the 26.04 upgrade, raced `grub2-common.service` at every boot; it was backed up to `/root/obsolete-conffiles/` and removed. (2) GRUB writes the block from the bootloader outside the ext4 journal, so a hard or host-level stop can tear it; `/usr/local/sbin/grubenv-ensure-valid` and a `grub2-common.service` drop-in now validate and recreate it ([RCA](../docs/dev-vm-grubenv-rca.md)). Consecutive reboots verified in both sessions; `Result=success` on 2026-10-28 |
 | Proxmox SSH key-only | Root key login kept, passwords refused (commit `12dff12`) |
 | dev VM management isolation | Proxmox firewall applied with the host unfiltered and VM 100 blocked from private addresses (commits `6c81c70`, `1b9744e`); survived an owner-requested host reboot with the full acceptance set passing again |
 | dev VM Tailscale join | Tailnet policy gives tagged devices no grant; dev joined as `tag:dev`; over the tailnet it is blocked from home-services, the NAS and Titan while the owner still reaches it (PR #27) |

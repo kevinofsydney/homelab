@@ -2,7 +2,7 @@
 
 | Actor | Allowed | Denied |
 | --- | --- | --- |
-| Interactive coding tools as `coder` | Work in development repos, run local tests, request PRs | Sudo, Docker group, production credentials, Proxmox/QNAP/router administration |
+| Interactive coding tools as `coder` | Work in development repos, run local tests, request pull requests; on-demand package maintenance through the fixed, argument-free `/usr/local/sbin/homelab-apt-maintenance` wrapper (installed 2026-10-28); codex runs with `sandbox_mode = "danger-full-access"` because its bwrap sandbox cannot initialise on that guest | Sudo, arbitrary `apt` arguments or package names, Docker group, production credentials, Proxmox/QNAP/router administration |
 | Hermes coding agent (live on VM 101) | Owner-only Telegram; Docker-sandboxed shell; fine-grained GitHub PAT on all repos (contents and PRs, no workflows; can push to main); all 58 n8n MCP tools (workflows, data tables, credential names, agents; since 2026-10-28) | Root, sudo, `docker` group, LAN/management routes, UFC gateway and its secrets |
 | UFC agent bot (planned, own guest) | Owner-only Telegram diagnosis through a loopback read-only n8n gateway | Shell, HTTP, credentials, n8n API key, any n8n mutation or execution |
 | Telegram assistant (future) | Health summaries from sanitized telemetry, create draft issues | Shell, infrastructure APIs, production secrets, direct deployment |
