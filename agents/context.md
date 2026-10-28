@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: backup failures now alert the owner on Telegram. Proxmox webhook target `telegram-alerts` (dedicated bot `the alerts bot`, token set by the owner on the host) receives `vzdump` warnings and errors via matcher `backup-alerts`; a forced failure reached the owner's phone. See [Proxmox backups](../docs/proxmox-backups.md#failure-alerts-2026-10-28).
+
 2026-10-28: VM backups are live (closes todo 1). With the owner's approval a dedicated QNAP share `proxmox-backups` (NFS for the Proxmox host only) was added as Proxmox storage `qnap-backups`, and job `backup-every-3-days` backs up VMs 100, 101 and 130 every 3 days, keeping 15 (about 45 days). The first run took 3 minutes and 14.4 GB; a VM 100 restore to a temporary, network-disconnected VMID booted with its tools present and was destroyed. QTS is also now reachable with a valid certificate through `tailscale serve` on the QNAP. See [Proxmox backups](../docs/proxmox-backups.md) and [QNAP access](../docs/qnap-access.md).
 
 2026-10-28: at the owner's request every n8n MCP tool is now enabled for Hermes (was 31 of 58), with ask-first rules in the skill for data-table column deletion, archiving and n8n Agent actions. Hermes read the data tables successfully. 27 of the 37 data tables belong to an archived research agent; at the owner's request they were renamed to `RA | …` over MCP and otherwise left as they are. See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).

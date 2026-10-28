@@ -43,7 +43,15 @@ The share has the QNAP Recycle Bin (`@Recycle`) enabled. Pruned backups land the
 2. To test or recover alongside the original: `qmrestore <archive> <unused vmid> --storage local-lvm --unique 1`, then `qm set <vmid> --net0 <net0>,link_down=1` before the first boot.
 3. To replace a lost guest: stop or remove the broken one, restore to its original VMID without `--unique`, and start it. For VM 130, confirm the Paperless NFS mount before relying on it.
 
+## Failure alerts (2026-10-28)
+
+- Webhook target `telegram-alerts` (Datacenter → Notifications) posts to the Telegram Bot API `sendMessage` for the owner's chat, using a dedicated bot, `the alerts bot`. The bot token is the target's secret `token`, entered by the owner on the host with hidden input and stored in `/etc/pve/priv/notifications.cfg`; it is not in Git. The message body is only the notification title and severity, which stays within Telegram's length limit; full logs remain in the Proxmox task view.
+- Matcher `backup-alerts` sends `type=vzdump` notifications of severity `warning` or `error` to that target, so successful runs stay quiet. The job uses `notification-mode notification-system`. The previous configuration is at `/root/notifications.cfg.pre-telegram-20261028` on the host.
+- Evidence: a direct `sendMessage` with the stored token, the built-in target test, and a forced failure (`vzdump 9999`, a VMID that does not exist; the log shows `notified via target telegram-alerts`) all reached the owner's phone, including the message `vzdump backup status (pve1.home.arpa): backup failed [error]`.
+- To change the token: `pvesh set /cluster/notifications/endpoints/webhook/telegram-alerts --secret "name=token,value=<base64 token>"`, ideally read with `read -rs` as in the original setup. To revoke: BotFather → the alerts bot → Revoke current token.
+- The built-in `mail-to-root` target still fires through the default matcher but bounces, because no email address is set for `root@pam`. It is harmless.
+- Not covered: a job that never runs, for example because the host is down at 02:30. An Uptime Kuma push monitor would catch that.
+
 ## Limits
 
 - The backups and the Paperless documents share one QNAP. A QNAP failure, fire or theft loses both. An off-site copy of the irreplaceable parts (the Paperless database) is a separate, optional step.
-- Failure notifications are not configured; check the job's last result in Datacenter → Backup, or add a notification target.
