@@ -16,7 +16,7 @@ Rules for maintaining this file:
 | 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs recorded, router reservations not independently checked |
 | 3 | Mitigate the `e1000e` NIC hang on the host | NIC hang preceded the 2026-10-27 outage and can make the host unreachable | Yes — host driver/kernel change | ~30 min + reboot | Temporary offload test passed; persistent mitigation and soak pending |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
-| 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; UPS and power-loss recovery unconfirmed |
+| 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; no UPS; CPU/RAM diagnostics and physical recovery untested |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
@@ -53,7 +53,7 @@ Paperless is healthy but has never seen its QNAP export disappear while running.
 Still listed as pending in [shared context](context.md) since the first milestone.
 
 - Done when: CPU/RAM/disk health, BIOS/firmware version and power-loss behaviour are recorded, and the absence or presence of a UPS is documented.
-- 2026-10-28: NVMe SMART overall PASSED; critical warning 0, spare 100%, wear 2%, media/data errors 0, temperature 35 C; 67 lifetime unsafe shutdowns and 39 error-log entries. The latest logged error was an invalid-field command, not proof of disk failure. Dell BIOS 1.11.0 dated 03/08/2023; 31 GiB RAM visible, about 21 GiB available; no failed systemd units. All three VMs have `onboot=1`. UPS presence and BIOS AC-power recovery policy are not established; OS-level checks are not a full CPU/RAM diagnostic.
+- 2026-10-28: NVMe SMART overall PASSED; critical warning 0, spare 100%, wear 2%, media/data errors 0, temperature 35 C; 67 lifetime unsafe shutdowns and 39 error-log entries. The latest logged error was an invalid-field command, not proof of disk failure. Dell BIOS 1.11.0 dated 03/08/2023; 31 GiB RAM visible, about 21 GiB available; no failed systemd units. All three VMs have `onboot=1`. The owner confirmed there is no UPS. The read-only Dell firmware attribute `AcPwrRcvry/current_value` reported `On` (possible values `Off;On;Last`), so the BIOS is configured to power on after AC is restored; an actual power-loss recovery has not been tested. OS-level checks are not a full CPU/RAM diagnostic.
 
 ### 8. Hermes Telegram gateway
 
