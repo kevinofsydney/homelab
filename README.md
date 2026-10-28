@@ -35,6 +35,7 @@ See the [topology and resource diagram](docs/homelab-diagram.md) for current all
 - `ansible/`: guest baseline plus separate private-access and dormant assistant-tool playbooks.
 - `compose/paperless/`: private application stack, gated on its NAS mount.
 - `compose/uptime-kuma/`: private status dashboard and deployment runbook.
+- [Hermes runbook](docs/hermes-runbook.md): operating the Telegram coding agent on VM 101.
 - `compose/n8n/`: inactive staging files retained for possible future use; self-hosted n8n is outside current scope.
 - `scripts/`: preflight, provisioning, deployment and backup validation.
 - `docs/`: architecture, security, storage, recovery and upstream source notes.

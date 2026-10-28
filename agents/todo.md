@@ -23,7 +23,6 @@ Rules for maintaining this file:
 | 9 | Close Hermes sandbox access to its own VM's SSH | A sandbox reached VM 101's LAN address on TCP 22; the traffic stays in the guest so the Proxmox firewall cannot see it | Yes — guest firewall rule | ~20 min | Not started |
 | 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
 | 11 | Hermes n8n MCP connection | Lets Hermes inspect, edit, test and publish n8n workflows | Yes — MCP token | ~45 min | Not started |
-| 12 | Hermes reboot recovery and runbook | Proves the bot returns unattended after a guest reboot | Guest reboot | ~30 min | Not started |
 
 ## Detail
 
@@ -95,16 +94,13 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - Export each workflow's JSON before every publish; the change is not made if the export fails.
 - Done when: the MCP token is loaded by the owner, `hermes mcp list` shows the intended tools, a read and a test run work, and an export is restored successfully.
 
-### 12. Hermes reboot recovery
-
-- Done when: after a VM 101 reboot, rootless Docker and the Telegram gateway come back without intervention and the owner gets a reply; the runbook records start, stop, kill switch and credential revocation steps.
-
 ## Closed
 
 Recorded here so a fresh agent does not redo them. Dates are the day the work was verified.
 
 | Item | Evidence |
 | --- | --- |
+| Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
 | dev VM release upgrade to 26.04.1 LTS | `dpkg --audit` empty, 7.0.0-38 kernel, no pending upgrades; the interrupted run stopped at the upgrader's "remove obsolete packages" prompt |
 | dev VM GRUB environment block | Root cause: the 24.04 SysV script `/etc/init.d/grub-common` (an obsolete conffile after the 26.04 upgrade) still ran at boot alongside the new `grub2-common.service`; both rewrote `grubenv` within 2 ms, so one read a half-written or deleted file. Script backed up to `/root/obsolete-conffiles/`, rc links removed, file deleted; two consecutive reboots then showed `grub2-common.service` `Result=success` and the guest `running` (2026-10-28). Home-services (24.04) has only the script, so is unaffected until it is upgraded |
