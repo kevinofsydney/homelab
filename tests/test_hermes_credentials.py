@@ -68,5 +68,12 @@ class CredentialsTests(unittest.TestCase):
         self.assertIsNotNone(module.check_value("n8n-mcp", "not.a.jwt"))
         self.assertIsNone(pattern.fullmatch("oc_live_1234567890abcdef"))
 
+    def test_github_token_must_be_fine_grained(self):
+        key, pattern = module.FIELDS["github"]
+        self.assertEqual(key, "GITHUB_TOKEN")
+        self.assertIsNotNone(pattern.fullmatch("github_pat_" + "A1b2_" * 10))
+        self.assertIsNone(pattern.fullmatch("ghp_" + "a" * 36))
+        self.assertIsNone(pattern.fullmatch("gho_" + "a" * 36))
+
 if __name__ == "__main__":
     unittest.main()

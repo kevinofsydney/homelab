@@ -2,6 +2,8 @@
 # Owner-approved 2026-10-28: open public egress (private ranges stay blocked by the
 # Proxmox VM firewall), Exa web search, and the sandbox/approval settings from the
 # UFC/Hermes handoff. Does not add credentials or start the gateway.
+# GITHUB_TOKEN (fine-grained PAT, entered with `hermes-secret github`) is forwarded into
+# sandboxes, where GIT_CONFIG_* env sets a credential helper and the commit identity.
 - name: Pin the Hermes sandbox image and harden the dormant agent configuration
   hosts: hermes_agents
   become: true
@@ -25,6 +27,8 @@
       telemetry.shared_metrics.enabled: "false"
       telemetry.shared_metrics.send: "false"
       web.backend: exa
+      terminal.docker_forward_env: '["GITHUB_TOKEN"]'
+      terminal.docker_env: '{"GIT_CONFIG_COUNT": "3", "GIT_CONFIG_KEY_0": "credential.https://github.com.helper", "GIT_CONFIG_VALUE_0": "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GITHUB_TOKEN\"; }; f", "GIT_CONFIG_KEY_1": "user.name", "GIT_CONFIG_VALUE_1": "Hermes (kevinofsydney)", "GIT_CONFIG_KEY_2": "user.email", "GIT_CONFIG_VALUE_2": "22282813+kevinofsydney@users.noreply.github.com"}'
       model.provider: openrouter
       model.default: deepseek/deepseek-v4.1-flash-1017
   tasks:

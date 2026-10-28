@@ -60,9 +60,10 @@ Stored in `/home/hermes/.hermes/.env` (owner `hermes`, mode 600), entered only t
 | `owner` | `TELEGRAM_ALLOWED_USERS` | Owner's numeric ID only (not secret) | Edit with `--replace` |
 | `openrouter` | `OPENROUTER_API_KEY` | $10/month key limit | openrouter.ai → Keys |
 | `exa` | `EXA_API_KEY` | Exa account limits | dashboard.exa.ai → API keys |
+| `github` | `GITHUB_TOKEN` | Fine-grained PAT `hermes-homelab`: all repositories, Contents and Pull requests read/write, no Workflows/Administration/Secrets/Webhooks, 90-day expiry. Acts as the owner | GitHub → Settings → Developer settings → Fine-grained tokens |
 | `n8n-mcp` | `N8N_MCP_TOKEN` | Instance-level MCP token (JWT `aud: mcp-server-api`); all 58 tools | n8n → Settings → Instance-level MCP → revoke the access token |
 
-Not yet configured: GitHub App (todo 10). Add it here when it is.
+Git in the sandbox: `terminal.docker_forward_env` passes `GITHUB_TOKEN` into each container, and `terminal.docker_env` sets `GIT_CONFIG_*` for a credential helper on `https://github.com` and the commit identity `Hermes (kevinofsydney)` with the owner's no-reply email. There is no `gh` CLI in the sandbox image; pull requests go through the REST API.
 
 To rotate: create the new value at the provider, run `sudo -iu hermes hermes-secret <name> --replace`, restart the gateway, then revoke the old value.
 

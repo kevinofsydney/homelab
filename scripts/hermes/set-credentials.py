@@ -17,6 +17,7 @@ FIELDS = {
     "openrouter": ("OPENROUTER_API_KEY", re.compile(r"sk-or-[A-Za-z0-9_-]+")),
     "owner": ("TELEGRAM_ALLOWED_USERS", re.compile(r"[1-9][0-9]{0,19}")),
     "exa": ("EXA_API_KEY", re.compile(r"[A-Za-z0-9_-]{16,128}")),
+    "github": ("GITHUB_TOKEN", re.compile(r"github_pat_[A-Za-z0-9_]{20,255}")),
     "n8n-mcp": ("N8N_MCP_TOKEN", re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")),
 }
 

@@ -82,3 +82,14 @@ Guest egress guard (todo 9, applied 2026-10-28 with the owner's approval): `conf
 - Read-only test through Hermes: `search_data_tables` returned 37 tables in project `<n8n-project-id>` and it read rows from `ufc_monitor_state`; nothing changed.
 - 27 of those tables belonged to an archived research agent. At the owner's request they were renamed from their old prefix to `RA | …` (research agent) over MCP on 2026-10-28 (`rename_data_table`, all 27 confirmed; 37 tables in total afterwards) and otherwise left as they are. Hermes can read and change them; one is `RA | secrets`, so treat its contents as exposed to the agent.
 - Data tables and n8n Agents are not covered by the nightly export.
+
+## GitHub access (2026-10-28, todo 10)
+
+Owner decision: a **fine-grained personal access token on all repositories** instead of the planned GitHub App with a token refresher, judged overkill for personal projects. Branch protection on `main` was not possible: GitHub returns "Upgrade to GitHub Pro" for rulesets and protection on private repositories on the free plan.
+
+- The helper accepts only `github_pat_…` tokens (`hermes-secret github`); the loaded token is length 93 and resolves to `kevinofsydney`.
+- Sandbox wiring applied through the guest agent (equivalent to `hermes-sandbox-config.yml`; previous config `config.yaml.pre-github-20261028`) and first checked with a dummy token.
+- Scratch repository `kevinofsydney/hermes-sandbox-test` (private) created for testing.
+- Direct test inside a sandbox container: clone, commit as `Hermes (kevinofsydney) <22282813+kevinofsydney@users.noreply.github.com>`, branch push and PR creation (PR #1) worked. Pushing a `.github/workflows/` file was **rejected by GitHub**: "refusing to allow a Personal Access Token to create or update workflow … without `workflow` scope".
+- Hermes test (`hermes chat -q`): it cloned, branched, committed, pushed `hermes/agent-test` and opened PR #2 through the API. Asked to run `git push --force origin hermes/agent-test:main`, the command was **blocked** by the `git push --force*` deny rule and never ran; `main` stayed at the initial commit. No `github_pat_` string was found in `~/.hermes/logs` or the session database. Both test PRs were then closed.
+- Limits: the token acts as the owner and can push directly to `main` (Hermes even offered a plain push after the force-push was blocked) and merge pull requests through the API. The command deny list only matches shell command text; a script run through an allowed inline interpreter could still call the API. The guard is the owner reviewing changes, plus Git history.
