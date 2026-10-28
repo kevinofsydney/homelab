@@ -14,10 +14,9 @@ Rules for maintaining this file:
 | # | Action | Why it matters | Approval needed | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
 | 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs recorded, router reservations not independently checked |
-| 3 | Mitigate the `e1000e` NIC hang on the host | Root cause of the 2026-10-27 outage; recurs under VM load and presents as "the whole homelab vanished" | Yes — host driver/kernel change | ~30 min + reboot | Not started |
+| 3 | Mitigate the `e1000e` NIC hang on the host | NIC hang preceded the 2026-10-27 outage and can make the host unreachable | Yes — host driver/kernel change | ~30 min + reboot | Temporary offload test passed; persistent mitigation and soak pending |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
-| 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
-| 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Logrotate fixed; one old venv package remains |
+| 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; UPS and power-loss recovery unconfirmed |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
@@ -39,6 +38,7 @@ Autostart ordering and the dev VM's firewall acceptance now depend on fixed addr
 - Evidence to keep: `journalctl -b -1 -p err`, `last -x reboot shutdown`, `ethtool -k nic0`.
 - Candidate mitigations: disable the problematic offloads/EEE on `nic0`, or a kernel/firmware change. Choose one, record the rollback, and keep the change minimal.
 - Done when: the mitigation survives a reboot and a defined soak period under VM load with no further unit-hang messages — or the owner accepts the risk explicitly.
+- 2026-10-28: temporarily disabled TSO, GSO and GRO on `nic0` under a five-minute automatic rollback timer. Fresh host SSH, Proxmox firewall and VM checks, a 256 MiB read from an existing QNAP backup, and Paperless/Kuma health checks succeeded. Restored the original on/on/on settings and stopped the timer. This short test does not establish that the hang is fixed; no persistent network change or reboot was performed. Current boot showed no hardware-unit-hang messages; an older boot did.
 
 ### 4. Paperless NAS-loss and restore test
 
@@ -53,12 +53,7 @@ Paperless is healthy but has never seen its QNAP export disappear while running.
 Still listed as pending in [shared context](context.md) since the first milestone.
 
 - Done when: CPU/RAM/disk health, BIOS/firmware version and power-loss behaviour are recorded, and the absence or presence of a UPS is documented.
-
-### 7. dev VM package leftovers
-
-- 2026-10-28: verified that the obsolete `/etc/logrotate.d/cloud-init` was byte-identical to the current `cloud-init-base` file, moved it to `/root/obsolete-conffiles/cloud-init-logrotate-20261028`, checked `logrotate -d`, and restarted `logrotate.service`. `Result=success` and `systemctl is-system-running` returned `running`.
-- Backed up removed-package configuration and purged `keyboxd`, `networkd-dispatcher`, `pollinate`, `python3.12-minimal` and `sosreport`; the empty stale upgrade marker was moved to `/root/obsolete-conffiles/`.
-- `python3.12-venv` remains in `rc` state. Its purge script removes shared `/usr/lib/python-wheels` and `/var/lib/python-wheels`, while newer Python venv packages are installed. Do not purge without reviewing the shared-path effects; document a deliberate keep decision or prove cleanup safe.
+- 2026-10-28: NVMe SMART overall PASSED; critical warning 0, spare 100%, wear 2%, media/data errors 0, temperature 35 C; 67 lifetime unsafe shutdowns and 39 error-log entries. The latest logged error was an invalid-field command, not proof of disk failure. Dell BIOS 1.11.0 dated 03/08/2023; 31 GiB RAM visible, about 21 GiB available; no failed systemd units. All three VMs have `onboot=1`. UPS presence and BIOS AC-power recovery policy are not established; OS-level checks are not a full CPU/RAM diagnostic.
 
 ### 8. Hermes Telegram gateway
 
@@ -80,6 +75,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 
 | Item | Evidence |
 | --- | --- |
+| dev VM package leftovers | On 2026-10-28 the obsolete duplicate cloud-init logrotate conffile was backed up, logrotate succeeded, and `systemctl is-system-running` returned `running`. Five obsolete package configurations and the stale upgrade marker were removed after backup. `python3.12-venv` is deliberately retained in `rc` state because its purge script removes shared Python wheel paths potentially used by newer Python installations. |
 | DeepSeek Harness in the pinned installer | PR #63 pinned dsh 0.2.1-rc.2 and the top-level tarball SHA-512; isolated install and `dsh --version` succeeded. The updated guest installer matched the merged source SHA-256, and its read-only check matched installed versions and launchers. Installed contents and transitive dependencies are not independently hashed. |
 | Hermes GitHub access | Fine-grained PAT on all repositories (owner decision; App judged overkill; branch protection unavailable on the free plan). In private scratch repo `hermes-sandbox-test`: Hermes cloned, committed, pushed a branch and opened a PR; force-push to `main` blocked by the deny rule; workflow-file push rejected by GitHub; no token in logs (2026-10-28). See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | VM backups and restore test | Job `backup-every-3-days` (VMs 100, 101, 130; every 3 days at 02:30; keep last 15) to NFS storage `qnap-backups` on a dedicated QNAP share; first run OK, 14.4 GB; VM 100 restored to VMID 900 with a new MAC and the link down, booted with its tools present, then destroyed (2026-10-28). Backup warnings and failures alert the owner on Telegram through `the alerts bot`; a forced failure was delivered. See [Proxmox backups](../docs/proxmox-backups.md) |
