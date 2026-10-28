@@ -32,7 +32,7 @@ The canonical list is [open work](../todo.md). Highlights:
 
 - **Action 3, `e1000e` NIC hang** on the host: the likeliest cause of a repeat of the 2026-10-27 outage. Needs approval and a host reboot.
 - **Action 4, Paperless NAS-loss test.**
-- **Action 12, MagicDNS on Titan:** the owner's DNS screenshot shows no extra `ts.net` split route; a Tailscale internal resolver query from home-services resolved the NAS name. Titan still needs direct and normal Windows DNS tests; preserve its hosts-file entries until verified.
+- **Action 12, MagicDNS on Titan:** the owner's DNS screenshot shows no extra `ts.net` split route; a Tailscale internal resolver query from home-services resolved the NAS name. Titan internal Tailscale DNS resolved the NAS name, but Windows `Resolve-DnsName -DnsOnly -NoHostsFile` returned NXDOMAIN. Check Windows DNS policy and Tailscale DNS preference; preserve the hosts-file entries until verified.
 - **Action 7, dev VM upgrade leftovers:** obsolete conffiles from the 24.04 → 26.04 upgrade. `/etc/logrotate.d/cloud-init` duplicates `cloud-init-base`, so `logrotate.service` fails and the guest shows `degraded` (seen 2026-10-28; harmless). The earlier GRUB script leftover is already fixed.
 - **Action 8, Hermes:** non-owner and group-add tests still pending.
 - The owner reports the QNAP Recycle Bin on `proxmox-backups` is off; this has not been independently verified in QTS.

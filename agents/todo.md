@@ -17,7 +17,7 @@ Rules for maintaining this file:
 | 3 | Mitigate the `e1000e` NIC hang on the host | NIC hang preceded the 2026-10-27 outage and can make the host unreachable | Yes — host driver/kernel change | ~30 min + reboot | Temporary offload test passed; persistent mitigation and soak pending |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; no UPS; CPU/RAM diagnostics and physical recovery untested |
-| 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Owner-side client verification | 5 min | Screenshot shows MagicDNS enabled and no extra split route; Titan test pending |
+| 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Owner-side client verification | 5 min | Tailscale internal lookup works on Titan; Windows DNS still fails |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
 
 ## Detail
@@ -58,7 +58,7 @@ Still listed as pending in [shared context](context.md) since the first mileston
 
 - 2026-10-28: the owner supplied a DNS-console screenshot showing MagicDNS enabled, the tailnet domain routed to `100.100.100.100`, NextDNS as global resolver, and no additional `ts.net` split-DNS entry visible. It is unknown when or how the earlier entry disappeared; no change was made by this agent.
 - From home-services, `sudo tailscale dns query` resolved the NAS tailnet name successfully. `tailscale debug resolve` returned NXDOMAIN from the VM's system resolver, which is consistent with this guest having `CorpDNS: false` (it does not accept Tailscale DNS for its system resolver). This does not establish that Titan's DNS is fixed.
-- Test directly on Titan with `nslookup <NAS-tailnet-name> 100.100.100.100` while connected to Tailscale. Separately test normal Windows name resolution and NAS access after reviewing the previously added hosts-file workaround; do not remove that workaround until the owner can verify access and restore it if needed.
+- On Titan, `tailscale dns query` resolved the NAS name to its expected tailnet IP, but `Resolve-DnsName -Name <NAS-tailnet-name> -DnsOnly -NoHostsFile` returned DNS name does not exist. Check Windows NRPT (`Get-DnsClientNrptPolicy | Select-Object Namespace, NameServers`) and whether the Tailscale client accepts DNS; preserve the existing hosts-file workaround. Tailscale recommends `Resolve-DnsName` rather than `nslookup` on Windows because the latter bypasses Windows DNS policies.
 
 ### 13. codex sandbox failure on the dev VM
 
