@@ -1,6 +1,6 @@
 # Hermes agent with Telegram, Git and n8n MCP: deployment plan
 
-Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created and started, with Proxmox autostart enabled.** An initial guest firewall policy is applied and partially verified; the pinned Hermes CLI is installed dormant, but no bot, provider credential or Hermes service has been configured; subsequent infrastructure and firewall changes require approval. Workflow IDs and prior requirements remain in the [UFC/Hermes handoff](../agents/handoffs/ufc-hermes-rebuild.md); self-hosted n8n and QNAP backups stay out of scope.
+Status: **operational since 2026-10-28** on VM 101. Phases 1–6 are done except the non-owner Telegram test; decisions below were revised during the build (open egress, all n8n tools, a GitHub token instead of an App). Operate it with the [Hermes runbook](hermes-runbook.md); build evidence is in the [sandbox plan](hermes-rootless-sandbox-plan.md) and [credential setup](hermes-credential-setup.md). The text below is the original plan, kept for its reasoning.
 
 ## Decisions
 

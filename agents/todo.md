@@ -55,6 +55,7 @@ Still listed as pending in [shared context](context.md) since the first mileston
 
 ### 7. dev VM package leftovers
 
+- 2026-10-28: `/etc/logrotate.d/cloud-init` is an obsolete `cloud-init` conffile that duplicates `cloud-init-base`, so `logrotate.service` fails ("duplicate log entry for /var/log/cloud-init-output.log") and the guest reports `degraded`. Fix as with the GRUB leftover: back it up, remove it, confirm `logrotate` and `systemctl is-system-running`. Check `dpkg-query -W -f='${Conffiles}' <package>` for other `obsolete` entries.
 - 7 `rc`-state package configs (`dpkg -l | awk '$1=="rc"'`) and the stale `/var/lib/ubuntu-release-upgrader/release-upgrade-available` marker.
 - Done when: `dpkg -l` shows no `rc` entries that are not deliberately kept, and the marker is gone.
 

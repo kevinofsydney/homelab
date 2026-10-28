@@ -45,7 +45,7 @@ The separate `private-access.yml` playbook installs the reviewed Tailscale clien
 
 ## 5. QNAP backup and restore
 
-Outside current scope by explicit operator request on 2026-10-27. Do not execute or revisit this section until the operator requests QNAP backups. Preserve it as a future recovery procedure; no backup/restore has been validated.
+Superseded 2026-10-28: the owner requested backups and they are live. The current procedure, evidence and restore steps are in [Proxmox backups](proxmox-backups.md). The text below is the earlier proposal.
 
 Create a dedicated NFS backup export; preserve Plex shares. Add it to Proxmox as backup storage. To configure it on the development VM, fill `qnap_backup_server` and `qnap_backup_export` in the ignored Ansible inventory, check `ansible/playbooks/qnap-backup-mount.yml` with `--check --diff`, then apply only after reviewing the network/storage change. The role writes a reviewed fstab entry; on the guest run `sudo mount /mnt/qnap-backups` and `scripts/validate-backup.sh /mnt/qnap-backups '<QNAP_HOST>:<BACKUP_EXPORT>'`. Configure a Proxmox backup schedule and restore a test VM as described in `docs/disaster-recovery.md`. Record results. Add encrypted off-NAS backup before storing irreplaceable data.
 

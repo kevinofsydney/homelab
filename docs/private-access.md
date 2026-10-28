@@ -32,6 +32,8 @@ The installer runs unprivileged with `--non-interactive --skip-browser --skip-co
 
 The first install reached the pinned source/runtime but failed because its managed Node needed `libatomic.so.1`. The unprivileged account's attempted sudo fallback was rejected. The role now installs Ubuntu's `libatomic1` explicitly through the administrative package task; the Hermes account retains no sudo access.
 
+**Update 2026-10-28:** Hermes runs on its own VM 101, not here; see the [Hermes runbook](hermes-runbook.md). The dormant copy on the development VM must stay inactive, because a Telegram bot token may be used by only one process. The original guidance follows.
+
 Before activating Hermes, choose the model/provider and explicit spend ceiling, obtain the Telegram numeric-user allowlist and bot token through a secret-safe channel, and review the enabled tools. The gateway remains off until those controls and management-route isolation are tested. No infrastructure/deployment credentials, host Docker socket, NAS mounts or administrative groups belong in this account. No outbound Telegram messages are authorized by this installation phase.
 
 ## Evidence to record

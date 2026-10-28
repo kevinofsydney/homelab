@@ -2,7 +2,7 @@
 
 ## First milestone
 
-One Proxmox host, one Ubuntu 24.04 development VM and private SSH access. The VM starts at 4 vCPU, 8 GiB RAM and 100 GiB SSD. Proxmox and NAS management remain separate from the development VM. Tailscale is configured interactively after SSH is verified. QNAP backups and self-hosted n8n are outside current scope until the operator requests them. No public services are part of this milestone.
+One Proxmox host, one Ubuntu 24.04 development VM and private SSH access. The VM starts at 4 vCPU, 8 GiB RAM and 100 GiB SSD. Proxmox and NAS management remain separate from the development VM. Tailscale is configured interactively after SSH is verified. Self-hosted n8n is outside current scope. (Update 2026-10-28: a home-services VM and a Hermes agent VM were added, and all VMs are backed up to the QNAP; see the [status handoff](../agents/handoffs/homelab-status-2026-10-28.md).) No public services are part of this milestone.
 
 ## Review of the proposed four-VM allocation
 

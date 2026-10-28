@@ -1,7 +1,7 @@
 # Task: rebuild Hermes and the UFC agent on the homelab after the VPS loss
 
-Updated: 2026-10-27 (n8n state refreshed after the fight-card fix and pipeline changes; workflow allowlist dropped)
-Status: homelab rebuild awaiting input (placement decision, secrets, approvals); nothing built or deployed. The urgent n8n fight-card outage is resolved in cloud n8n (see below)
+Updated: 2026-10-28
+Status: **Hermes rebuilt and live on VM 101** (see the [Hermes runbook](../../docs/hermes-runbook.md)); several requirements below were revised by owner decisions recorded there. The custom UFC agent (`the UFC bot`) is **not built** and proceeds only if the owner asks. Backups now exist. The n8n fight-card outage is resolved in cloud n8n (see below).
 Branch or worktree: none yet; this document is the plan
 Base/current commit: verify with `git log -1` before acting
 PR: none for the build itself

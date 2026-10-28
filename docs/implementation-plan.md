@@ -56,7 +56,7 @@ Obtain the public CA certificate or host fingerprint through a trusted console b
 | 2. Trusted management inventory | Check installed-version API and read actual node/storage/template state using narrowly scoped read access | CA/host identity trusted; IDs, capacity and resource plan reviewed; no existing VM selected as a new target |
 | 3. Ubuntu development VM | Review `proxmox/template.md`, cloud-init and plan-only provisioner; initially 4 vCPU/8 GiB/100 GiB | Explicit template/VM-change approval; boot, DHCP, SSH, guest agent and cloud-init verified after execution |
 | 4. Guest and coding tools | Ansible syntax and check-mode review; exact Codex/OpenCode artifacts; separate Hermes release review | Explicit package/account/service approval; `coder` has no sudo/Docker/production credentials; harmless CLI smoke tests pass |
-| 5. Backup and recovery | Prepared proposals and procedures retained for reference | Outside current scope until the operator requests QNAP backups; no backup or restore is verified |
+| 5. Backup and recovery | Proxmox job `backup-every-3-days` to the QNAP share `proxmox-backups` (2026-10-28) | Done: first run and a VM restore verified, Telegram failure alerts. See [Proxmox backups](proxmox-backups.md). Paperless NAS-loss test and an off-site copy remain |
 | 6. Private application VM | Resource review and per-service pattern below; Paperless first | Explicit provisioning/app approval; health, unauthorized-access rejection, NAS-loss and restore tests pass |
 | 7. Disposable workers | Implement dispatcher and worker lifecycle from `agents/workflows/issue-to-pr.md` on a disposable test repository | Hostile-input, token scope/expiry, timeout, management-route blocking and cleanup tests pass before activation |
 

@@ -1,6 +1,6 @@
 # Hermes VM isolation: proposed initial boundary
 
-Status: **initial VM-specific policy applied and partially verified on 2026-10-28** with owner approval. VM 101 is running with Proxmox autostart enabled. The guest agent was installed and Proxmox can communicate with it. No assistant gateway or credentials are configured. The stronger public-destination allowlist and sandbox verification remain outstanding.
+Status: **applied and verified 2026-10-28**, including after VM reboots. The public-destination allowlist was dropped by owner decision (open egress for web search), and an in-guest nftables guard was added for the sandbox; see the [sandbox plan](hermes-rootless-sandbox-plan.md) and [Hermes runbook](hermes-runbook.md). Original text follows.
 
 The review-only [example](../proxmox/firewall/hermes.fw.example) uses the existing development VM's IPv4 private-range restriction as a starting point: permit DHCP and the verified router's DNS, reject private, link-local and carrier-grade NAT destinations, and reject IPv6 egress. Inbound is unchanged so trusted operator SSH remains possible. Replace the router placeholder from ignored site inventory only after verification. Do not paste the example directly into Proxmox.
 
