@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: the owner dropped the n8n scope restriction: Hermes may work on **all** n8n workflows, not only `UFC | `. The Hermes plan, permissions and handoff were updated. Remaining Hermes work (Telegram gateway, sandbox self-SSH gap, GitHub App, n8n MCP, reboot recovery) is now tracked as actions 8–12 in [open work](todo.md).
+
 2026-10-28: Hermes on VM 101 now has a working model and web search. The owner loaded an Exa key and an OpenRouter key (verified `limit 10`, monthly reset, unused) through `hermes-secret`; the model is `deepseek/deepseek-v4.1-flash-1017` via OpenRouter. One-shot tests returned the exact requested reply and a correct Exa `web_search` result. The Telegram gateway is still stopped; GitHub and n8n credentials are not configured. Evidence in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).
 
 2026-10-28: the owner chose **open public egress** for Hermes (private ranges stay blocked) so it can do web search, using Exa. The Hermes sandbox is now hardened and pinned on VM 101: image by digest, fresh container per session, 2 CPU / 4 GiB enforced, manual approvals with a deny list, checkpoints on, telemetry off, `web.backend: exa`; `hermes-secret` accepts the Exa key. Rootless Docker state recorded from live checks. The sandbox can still reach the VM's own SSH port (finding, approval needed to close). No model provider, bot token, GitHub or n8n credential is configured yet; the gateway is stopped. See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).

@@ -34,7 +34,7 @@ Before cloning, re-check SSD free space and RAM against `docs/architecture.md` (
 
 ## Fixed rules carried over
 
-- Scope n8n work to the UFC workflows: names starting `UFC | ` in project `<n8n-project-id>`, folder `<n8n-folder-id>`. The operator reported on 2026-10-27 that every other workflow is archived, and later said a workflow ID allowlist is no longer needed. Do not maintain one in `policy.json`, the gateway or the Hermes skill; the [inventory below](#ufc-workflow-inventory-reference-not-an-allowlist) is for reference only.
+- n8n scope: **all workflows** (owner decision 2026-10-28). The earlier `UFC | ` name scope and workflow ID allowlist no longer apply to Hermes. The custom UFC agent's read-only gateway, if it is ever rebuilt, keeps its own narrower design.
 - Never print secrets or ask for them in chat; never commit them. The operator enters each one on the guest through a hidden-input helper. Report name, set/unset and length only.
 - Do not change the operator's local `ufc_dashboard` repository. Put the new UFC agent source in its own private repository only if the operator asks.
 - Hermes gets no root, sudo, `docker` group, `/etc/ufc-agent` access, gateway token, or ability to edit the gateway or policy.

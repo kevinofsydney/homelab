@@ -12,14 +12,14 @@ Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created a
 | Provider and budget | OpenRouter in front of that model, chosen for a **hard $10/month key limit**. DeepSeek direct is prepaid balance, which caps spend only while auto-top-up stays off |
 | Availability | 24/7 with `onboot 1` and `startup order=3` on the new guest, gateway supervised as a systemd unit |
 | Git authority | GitHub App installation scoped to this repository: contents and pull requests only. **Opens pull requests and does not merge them** |
-| n8n authority | Inspect, edit, test and **publish** workflows in the `UFC | ` scope. No freeze window. Export before publish is mandatory |
+| n8n authority | Inspect, edit, test and **publish** **all workflows** in the instance (owner decision 2026-10-28; the earlier `UFC | ` scope is dropped). No freeze window. Export before publish is mandatory |
 | Chat | Telegram, owner's numeric ID only, private chat, long polling |
 | Network egress | **Open public internet** (owner decision 2026-10-28). Private ranges, Tailscale/CGNAT and IPv6 stay blocked by the Proxmox VM firewall. The owner accepted that a hijacked agent could reach any public host, in exchange for web search; blast radius is limited by narrow, capped, revocable credentials and a rebuildable VM. Supersedes the public-destination allowlist below |
 | Web search | Exa (`web.backend: exa`), key entered by the owner through `hermes-secret exa` |
 
 ## Goal
 
-The owner talks to one agent over Telegram and it: clones and pulls repositories, edits and tests them, commits and pushes a branch, opens a pull request, and inspects or changes `UFC | ` n8n workflows.
+The owner talks to one agent over Telegram and it: clones and pulls repositories, edits and tests them, commits and pushes a branch, opens a pull request, and inspects or changes n8n workflows.
 
 ## Placement and sizing
 
@@ -48,7 +48,7 @@ An interactive [credential helper](hermes-credential-setup.md) is installed but 
 | --- | --- | --- |
 | GitHub App installation token | This repository only, contents + pull requests | Short-lived and revocable per installation; no Actions, workflow or secret administration |
 | Telegram bot token | Owner's numeric ID, private chat | One process per token; entered through hidden input or a secret store, never chat, Git or shell arguments |
-| n8n MCP credential | The UFC project, workflows named `UFC | ` | Scope checked server-side on the workflow name returned by n8n, never on a caller-supplied name |
+| n8n MCP credential | All workflows (2026-10-28) | No name or ID scope; per-workflow exposure is n8n's own "Available in MCP" setting |
 | Model provider key | $10/month hard limit | Plus agent-side job budget, timeouts and telemetry off |
 
 `GITHUB_TOKEN` is forwarded into the sandbox only, as recorded in the handoff; it never reaches the host shell or logs.

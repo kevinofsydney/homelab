@@ -19,6 +19,11 @@ Rules for maintaining this file:
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
+| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | In progress 2026-10-28 |
+| 9 | Close Hermes sandbox access to its own VM's SSH | A sandbox reached VM 101's LAN address on TCP 22; the traffic stays in the guest so the Proxmox firewall cannot see it | Yes — guest firewall rule | ~20 min | Not started |
+| 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
+| 11 | Hermes n8n MCP connection | Lets Hermes inspect, edit, test and publish n8n workflows | Yes — MCP token | ~45 min | Not started |
+| 12 | Hermes reboot recovery and runbook | Proves the bot returns unattended after a guest reboot | Guest reboot | ~30 min | Not started |
 
 ## Detail
 
@@ -64,6 +69,35 @@ Still listed as pending in [shared context](context.md) since the first mileston
 
 - 7 `rc`-state package configs (`dpkg -l | awk '$1=="rc"'`) and the stale `/var/lib/ubuntu-release-upgrader/release-upgrade-available` marker.
 - Done when: `dpkg -l` shows no `rc` entries that are not deliberately kept, and the marker is gone.
+
+### 8. Hermes Telegram gateway
+
+Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) and Exa web search already work on VM 101; see the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).
+
+- Telegram-side guard: disable **Allow Groups** for the bot in BotFather. The pinned gateway applies `TELEGRAM_ALLOWED_USERS` to groups too, and an offline audit accepted an owner callback from a group (see [credential setup](../docs/hermes-credential-setup.md)); keeping the bot out of groups removes that path.
+- The owner revokes the old token, enters the new one with `hermes-secret telegram`; `TELEGRAM_ALLOWED_USERS` already holds the owner ID. Never set `GATEWAY_ALLOW_ALL_USERS`.
+- Done when: the gateway runs as a supervised service that survives a restart; Telegram `getMe` matches the intended bot; the owner gets a reply in a private chat; a message from another account gets no reply and is logged as unauthorised; adding the bot to a group is refused.
+
+### 9. Hermes sandbox access to its own SSH
+
+- Add a guest nftables rule rejecting traffic owned by `hermes` (uid 1001, which includes rootless containers via slirp4netns) to private ranges, and keep it in the repository.
+- Done when: a sandbox container can no longer reach `<lan-host>:22`, public HTTPS and DNS still work, and the rule survives a guest reboot.
+
+### 10. Hermes GitHub App
+
+- Create a GitHub App with Contents and Pull requests read/write only, installed on chosen repositories; protect `main` so the App cannot push to it or merge.
+- Depends on action 1: a backup must exist before an agent holds push rights.
+- Done when: in a scratch repository Hermes clones, branches, commits, pushes its branch and opens a PR; pushing to `main` and force-pushing are refused; no token appears in logs.
+
+### 11. Hermes n8n MCP
+
+- Scope: **all workflows** in the instance (owner decision 2026-10-28; the `UFC | ` name scope and any allowlist are dropped). Tool exclusions for credentials, data tables and archive/delete remain unless the owner widens them.
+- Export each workflow's JSON before every publish; the change is not made if the export fails.
+- Done when: the MCP token is loaded by the owner, `hermes mcp list` shows the intended tools, a read and a test run work, and an export is restored successfully.
+
+### 12. Hermes reboot recovery
+
+- Done when: after a VM 101 reboot, rootless Docker and the Telegram gateway come back without intervention and the owner gets a reply; the runbook records start, stop, kill switch and credential revocation steps.
 
 ## Closed
 
