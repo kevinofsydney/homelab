@@ -17,7 +17,7 @@ Rules for maintaining this file:
 | 3 | Mitigate the `e1000e` NIC hang on the host | NIC hang preceded the 2026-10-27 outage and can make the host unreachable | Yes — host driver/kernel change | ~30 min + reboot | Temporary offload test passed; persistent mitigation and soak pending |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; no UPS; CPU/RAM diagnostics and physical recovery untested |
-| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
+| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Owner chat and non-owner denial verified; group-add test pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
 
@@ -62,6 +62,7 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - Telegram-side guard: disable **Allow Groups** for the bot in BotFather. The pinned gateway applies `TELEGRAM_ALLOWED_USERS` to groups too, and an offline audit accepted an owner callback from a group (see [credential setup](../docs/hermes-credential-setup.md)); keeping the bot out of groups removes that path.
 - The owner revokes the old token, enters the new one with `hermes-secret telegram`; `TELEGRAM_ALLOWED_USERS` already holds the owner ID. Never set `GATEWAY_ALLOW_ALL_USERS`.
 - Done when: the gateway runs as a supervised service that survives a restart; Telegram `getMe` matches the intended bot; the owner gets a reply in a private chat; a message from another account gets no reply and is logged as unauthorised; adding the bot to a group is refused.
+- 2026-10-28: the owner sent a test from a second Telegram account and reported no reply. Gateway journal warnings at 07:26 UTC recorded blocked unauthorized users; IDs were not retained in this repository. Group-add refusal still needs a live test.
 
 ### 13. codex sandbox failure on the dev VM
 
