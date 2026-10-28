@@ -78,7 +78,7 @@ The fine-grained token (all repositories, Contents and Pull requests read/write,
 
 ### 16. VM 101 rollback snapshot
 
-`qm listsnapshot 101` shows `pre-hermes-sudo-20261028`, taken before Hermes was given sudo and the Docker sandbox was dropped. Config backups on the VM: `~/.hermes/config.yaml.pre-sudo-20261028`, `.pre-sysupgrade-20261028` and `.pre-repo-20261028`.
+`qm listsnapshot 101` shows `pre-hermes-sudo-20261028`, taken before Hermes was given sudo and the Docker sandbox was dropped. It also predates Hermes's upgrade of VM 101 to Ubuntu 26.04.1 (2026-10-28), so restoring it would roll back the release too. Config backups on the VM: `~/.hermes/config.yaml.pre-sudo-20261028`, `.pre-sysupgrade-20261028` and `.pre-repo-20261028`.
 
 - Done when: the owner agrees, `qm delsnapshot 101 pre-hermes-sudo-20261028` succeeds and the next backup run is OK.
 

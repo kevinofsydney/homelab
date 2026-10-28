@@ -105,7 +105,7 @@ Owner decision: Hermes must be productive and manage its own VM (packages, Ubunt
 - Proxmox snapshot `pre-hermes-sudo-20261028` taken first; previous config `config.yaml.pre-sudo-20261028`.
 - `/etc/sudoers.d/60-hermes-admin` (NOPASSWD: ALL, `visudo` clean); `terminal.backend: local`, `terminal.cwd: /home/hermes/workspaces`; `approvals.mode: 'off'` (written directly, because `hermes config set` stores `"off"` with its quotes). The 7 deny rules stay, and Hermes's own evals show they apply with approvals off.
 - Git: global config for `hermes` with a credential helper that reads the token from `~/.hermes/.env` (the local backend scrubs Hermes-managed secrets from child environments); `git credential fill` returned a `github_pat_` token.
-- Skill `vm-self-admin` seeded in `~/.hermes/skills/devops/` (editable by Hermes): upgrade freely, run disruptive jobs detached with `systemd-run` because restarting the gateway ends its turn, and ask the owner before a release upgrade so a snapshot can be taken. VM 101 is on Ubuntu 24.04.5.
+- Skill `vm-self-admin` seeded in `~/.hermes/skills/devops/` (editable by Hermes): upgrade freely, run disruptive jobs detached with `systemd-run` because restarting the gateway ends its turn, and ask the owner before a release upgrade so a snapshot can be taken. VM 101 was on Ubuntu 24.04.5 at the time; Hermes upgraded it to 26.04.1 the same day.
 
 ## Pull request gate (2026-10-28)
 
