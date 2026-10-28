@@ -80,5 +80,5 @@ Guest egress guard (todo 9, applied 2026-10-28 with the owner's approval): `conf
 
 - Owner decision: enable every n8n MCP tool. `hermes config unset mcp_servers.n8n.tools` removed the 31-tool filter (previous config kept as `config.yaml.pre-all-tools-20261028`); `hermes mcp list` shows `n8n … all, enabled`. The skill gained ask-first rules for column deletion, archiving and destructive n8n Agent actions.
 - Read-only test through Hermes: `search_data_tables` returned 37 tables in project `<n8n-project-id>` and it read rows from `ufc_monitor_state`; nothing changed.
-- Finding for the owner: 27 of those tables are named `legacy | …` (settings, prompts, companies, sources, runs, LLM calls and more). The legacy workflows are archived, but their data tables remain and Hermes can now read and change them. Delete or move them, or narrow the tools again, if that data should be out of reach.
+- 27 of those tables belonged to an archived research agent. At the owner's request they were renamed from their old prefix to `RA | …` (research agent) over MCP on 2026-10-28 (`rename_data_table`, all 27 confirmed; 37 tables in total afterwards) and otherwise left as they are. Hermes can read and change them; one is `RA | secrets`, so treat its contents as exposed to the agent.
 - Data tables and n8n Agents are not covered by the nightly export.
