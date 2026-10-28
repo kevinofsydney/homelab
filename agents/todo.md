@@ -19,6 +19,9 @@ Rules for maintaining this file:
 | 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; no UPS; CPU/RAM diagnostics and physical recovery untested |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Owner-side client verification | 5 min | Tailscale internal lookup works on Titan; Windows DNS still fails |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
+| 15 | Renew Hermes's GitHub token before 2026-11-27 | Hermes loses clone, push and PR access when the fine-grained token expires | Owner creates the token and enters it | 10 min | Not started |
+| 16 | Delete VM 101 snapshot `pre-hermes-sudo-20261028` | It is the rollback point for the sudo change; a lingering snapshot grows and pins old disk state | Yes, owner decides when | 2 min | Keep until Hermes self-administration has run cleanly for a few days |
+| 17 | Owner-side Telegram check of `/repo` and `/sysupgrade` | Both were verified through `getMyCommands` and `hermes chat -q`, not by tapping in Telegram | No | 5 min | Not started |
 
 ## Detail
 
@@ -66,6 +69,25 @@ The previously observed EPERM is not currently reproducible, so its underlying c
 
 Restored `sandbox_mode = "workspace-write"` while preserving `approval_policy = "on-request"`; the prior private configuration is `/home/coder/.codex/config.toml.pre-workspace-sandbox-20261028`. A real ephemeral Codex 0.165.0 session reported `workspace-write` and successfully ran `/bin/pwd`. The standalone `codex sandbox` command without an explicit policy remained read-only in testing; do not confuse it with an end-to-end workspace-write session. Follow up if EPERM recurs or its cause can be established; do not claim a root cause from the successful retest.
 
+### 15. Hermes GitHub token
+
+The fine-grained token (all repositories, Contents and Pull requests read/write, no Workflows) reports `github-authentication-token-expiration: 2026-11-27 02:42:03 UTC`.
+
+- Create a replacement with the same scopes in GitHub. Then on VM 101 run `sudo -iu hermes hermes-secret github --replace`, restart the gateway, and check it with an API identity call (never print the token). Revoke the old token.
+- Done when: `/repo` lists repositories with the new token and the old one is revoked.
+
+### 16. VM 101 rollback snapshot
+
+`qm listsnapshot 101` shows `pre-hermes-sudo-20261028`, taken before Hermes was given sudo and the Docker sandbox was dropped. Config backups on the VM: `~/.hermes/config.yaml.pre-sudo-20261028`, `.pre-sysupgrade-20261028` and `.pre-repo-20261028`.
+
+- Done when: the owner agrees, `qm delsnapshot 101 pre-hermes-sudo-20261028` succeeds and the next backup run is OK.
+
+### 17. Owner-side Telegram checks
+
+- `/repo` with no argument should show 4 repository buttons plus "Other". Tapping one should clone or update that repository and report back. `/repo <repo>` was verified through `hermes chat -q`: it cloned the repository and wrote the memory line `Current repo: …`.
+- `/sysupgrade` should report pending updates and wait for "apply". It has not been run yet.
+- If the menu does not show them, reopen the chat. `getMyCommands` lists `/repo` first and `/sysupgrade` second.
+
 ## Closed
 
 Recorded here so a fresh agent does not redo them. Dates are the day the work was verified.
@@ -78,7 +100,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 | Hermes GitHub access | Fine-grained PAT on all repositories (owner decision; App judged overkill; branch protection unavailable on the free plan). In private scratch repo `hermes-sandbox-test`: Hermes cloned, committed, pushed a branch and opened a PR; force-push to `main` blocked by the deny rule; workflow-file push rejected by GitHub; no token in logs (2026-10-28). See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | VM backups and restore test | Job `backup-every-3-days` (VMs 100, 101, 130; every 3 days at 02:30; keep last 15) to NFS storage `qnap-backups` on a dedicated QNAP share; first run OK, 14.4 GB; VM 100 restored to VMID 900 with a new MAC and the link down, booted with its tools present, then destroyed (2026-10-28). Backup warnings and failures alert the owner on Telegram through `the alerts bot`; a forced failure was delivered. See [Proxmox backups](../docs/proxmox-backups.md) |
 | QTS with a valid certificate | `tailscale serve --bg --https=8443 https+insecure://127.0.0.1:443` on the QNAP after enabling tailnet HTTPS certificates; Let's Encrypt certificate for the NAS's tailnet name, auto-renewed. See [QNAP access](../docs/qnap-access.md) |
-| Hermes n8n MCP connection | 31 of 58 tools on all workflows; `n8n-workflows` skill (root-owned); Hermes read a workflow and ran a pinned test (execution 2214, success); nightly root-only JSON export of all 22 workflows, unreadable by `hermes` (2026-10-28). Importing an export back into n8n is untested. Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md) |
+| Hermes n8n MCP connection | 31 of 58 tools on all workflows at first, then all 58 by owner decision; `n8n-workflows` skill (now owned and editable by Hermes); Hermes read a workflow and ran a pinned test (execution 2214, success); nightly root-only JSON export of all 22 workflows, unreadable by `hermes` (2026-10-28). Importing an export back into n8n is untested. Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md) |
 | Hermes sandbox access to its own SSH | Guest nftables table `inet hermes_egress` via `hermes-egress.service`: uid 1001 and its sandboxes rejected from private ranges except router DNS; sandbox reached the VM's own SSH before, blocked after; DNS and GitHub still work; survived a VM reboot (2026-10-28). Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
