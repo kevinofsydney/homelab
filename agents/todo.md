@@ -1,6 +1,6 @@
 # Open work
 
-Last updated: 2026-10-27. This is the actionable list for any agent picking up the project. It records what is left, why it matters, what evidence closes it and which approval is still missing. State, evidence and history live in [shared context](context.md); service plans live in [the roadmap](../docs/roadmap.md).
+Last updated: 2026-10-28. This is the actionable list for any agent picking up the project. It records what is left, why it matters, what evidence closes it and which approval is still missing. State, evidence and history live in [shared context](context.md); service plans live in [the roadmap](../docs/roadmap.md).
 
 Rules for maintaining this file:
 
@@ -21,6 +21,7 @@ Rules for maintaining this file:
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
+| 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 
 ## Detail
 
@@ -80,6 +81,15 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - Create a GitHub App with Contents and Pull requests read/write only, installed on chosen repositories; protect `main` so the App cannot push to it or merge.
 - Depends on action 1: a backup must exist before an agent holds push rights.
 - Done when: in a scratch repository Hermes clones, branches, commits, pushes its branch and opens a PR; pushing to `main` and force-pushing are refused; no token appears in logs.
+
+### 12. Fix MagicDNS tailnet-wide (owner console action)
+
+Tailnet device names are unresolvable on Titan: `tailscale debug resolve titan.<tailnet>.ts.net` returns `no such host` from inside the daemon, `Resolve-DnsName` against `100.100.100.100` returns NXDOMAIN instantly for tailnet FQDNs and times out on short names, and `tailscale dns status` advertises `titan.<tailnet>.ts.net` while also showing a split-DNS route `ts.net -> 199.247.155.53` that intercepts tailnet-name queries. The target resolver publicly returns NXDOMAIN (via 8.8.8.8), and the toggling `--accept-dns` off/on re-push did not clear it. Tailscale on the client is 1.104.2 with `CorpDNS` and `RouteAll` true.
+
+- Next (owner, ~5 minutes): in the [admin console DNS settings](https://login.tailscale.com/admin/dns), delete the `ts.net -> 199.247.155.53` row in "Nameserver split DNS"; keep the NextDNS global nameserver (`<nextdns-profile>`).
+- Verify: `tailscale debug resolve titan.<tailnet>.ts.net` returns `100.96.108.54`; then `\\<nas>.<tailnet>.ts.net` resolves and the Titan hosts entry can be retired if desired.
+- Not blocked by this: NAS access from Titan works through the hosts-file mapping added with owner approval on 2026-10-28 (`<tailscale-ip> <nas>`, SMB 445 verified on both the Tailscale and LAN addresses).
+- Check first with the owner that the split-DNS route was not added deliberately before removing it.
 
 ## Closed
 
