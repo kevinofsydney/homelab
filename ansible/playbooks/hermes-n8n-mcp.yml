@@ -1,44 +1,12 @@
 ---
 # Owner-approved 2026-10-28 (todo 11): Hermes may work on all n8n workflows.
-# Excluded tools: credentials, data tables, archiving, n8n Agents and gateway services.
+# All 58 MCP tools are enabled (owner decision 2026-10-28); the skill sets ask-first rules.
 # Requires hermes_n8n_base_url in ignored inventory and N8N_MCP_TOKEN entered by the owner.
 - name: Connect Hermes to n8n over MCP, with a skill and an export job outside its reach
   hosts: hermes_agents
   become: true
   gather_facts: true
   vars:
-    hermes_n8n_tools:
-      - get_workflow_details
-      - get_workflow_history
-      - get_workflow_version
-      - get_workflow_versions_diff
-      - get_workflow_execution
-      - search_workflows
-      - search_workflow_executions
-      - update_workflow
-      - create_workflow_from_code
-      - restore_workflow_version
-      - publish_workflow
-      - unpublish_workflow
-      - prepare_workflow_pin_data
-      - test_workflow
-      - execute_workflow
-      - validate_workflow
-      - validate_node_config
-      - search_nodes
-      - get_node_types
-      - get_node_usage
-      - get_workflow_sdk_reference
-      - get_workflow_best_practices
-      - get_instance_context
-      - get_instance_activity
-      - expand_instance_activity
-      - search_projects
-      - search_folders
-      - list_workflow_tags
-      - create_folder
-      - update_folder
-      - move_workflows_to_folder
     hermes_n8n_server:
       url: "{{ hermes_n8n_base_url }}/mcp-server/http"
       headers:
@@ -46,8 +14,6 @@
       enabled: true
       timeout: 120
       connect_timeout: 30
-      tools:
-        include: "{{ hermes_n8n_tools }}"
   tasks:
     - name: Require the reviewed guest and an n8n base URL
       ansible.builtin.assert:

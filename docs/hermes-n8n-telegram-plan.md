@@ -12,7 +12,7 @@ Status: owner decisions recorded 2026-10-27. **A dedicated VM has been created a
 | Provider and budget | OpenRouter in front of that model, chosen for a **hard $10/month key limit**. DeepSeek direct is prepaid balance, which caps spend only while auto-top-up stays off |
 | Availability | 24/7 with `onboot 1` and `startup order=3` on the new guest, gateway supervised as a systemd unit |
 | Git authority | GitHub App installation scoped to this repository: contents and pull requests only. **Opens pull requests and does not merge them** |
-| n8n authority | Inspect, edit, test and **publish** **all workflows** in the instance (owner decision 2026-10-28; the earlier `UFC | ` scope is dropped). No freeze window. Export before publish is mandatory |
+| n8n authority | **All 58 n8n MCP tools** (owner decision 2026-10-28): every workflow marked Available in MCP, all data tables, credential names, folders, archiving and n8n Agents. Ask-first rules in the skill for permanent deletions, archiving and agent runs. No freeze window |
 | Chat | Telegram, owner's numeric ID only, private chat, long polling |
 | Network egress | **Open public internet** (owner decision 2026-10-28). Private ranges, Tailscale/CGNAT and IPv6 stay blocked by the Proxmox VM firewall. The owner accepted that a hijacked agent could reach any public host, in exchange for web search; blast radius is limited by narrow, capped, revocable credentials and a rebuildable VM. Supersedes the public-destination allowlist below |
 | Web search | Exa (`web.backend: exa`), key entered by the owner through `hermes-secret exa` |

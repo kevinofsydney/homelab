@@ -75,3 +75,10 @@ Guest egress guard (todo 9, applied 2026-10-28 with the owner's approval): `conf
 - Test run: `prepare_workflow_pin_data` then `test_workflow` on the same workflow produced n8n execution 2214, status success, no failed node; credentialed and HTTP nodes were pinned, so no real message or API call was made.
 - Export job: the first run exported all 22 workflows (896 KB) to `/var/backups/n8n/20261028T005633Z`; every file contains a `workflow` object with `nodes` and `connections`; `hermes` gets `Permission denied` on the directory. The timer's next run was 16:35 UTC (03:35 Melbourne).
 - Not yet done: importing an export back into n8n (structure checked only), and an edit-and-publish through Hermes.
+
+## All n8n MCP tools enabled (2026-10-28)
+
+- Owner decision: enable every n8n MCP tool. `hermes config unset mcp_servers.n8n.tools` removed the 31-tool filter (previous config kept as `config.yaml.pre-all-tools-20261028`); `hermes mcp list` shows `n8n … all, enabled`. The skill gained ask-first rules for column deletion, archiving and destructive n8n Agent actions.
+- Read-only test through Hermes: `search_data_tables` returned 37 tables in project `<n8n-project-id>` and it read rows from `ufc_monitor_state`; nothing changed.
+- Finding for the owner: 27 of those tables are named `legacy | …` (settings, prompts, companies, sources, runs, LLM calls and more). The legacy workflows are archived, but their data tables remain and Hermes can now read and change them. Delete or move them, or narrow the tools again, if that data should be out of reach.
+- Data tables and n8n Agents are not covered by the nightly export.

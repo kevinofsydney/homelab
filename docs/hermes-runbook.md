@@ -60,7 +60,7 @@ Stored in `/home/hermes/.hermes/.env` (owner `hermes`, mode 600), entered only t
 | `owner` | `TELEGRAM_ALLOWED_USERS` | Owner's numeric ID only (not secret) | Edit with `--replace` |
 | `openrouter` | `OPENROUTER_API_KEY` | $10/month key limit | openrouter.ai → Keys |
 | `exa` | `EXA_API_KEY` | Exa account limits | dashboard.exa.ai → API keys |
-| `n8n-mcp` | `N8N_MCP_TOKEN` | Instance-level MCP token (JWT `aud: mcp-server-api`); 31 of 58 tools selected | n8n → Settings → Instance-level MCP → revoke the access token |
+| `n8n-mcp` | `N8N_MCP_TOKEN` | Instance-level MCP token (JWT `aud: mcp-server-api`); all 58 tools | n8n → Settings → Instance-level MCP → revoke the access token |
 
 Not yet configured: GitHub App (todo 10). Add it here when it is.
 
@@ -74,8 +74,8 @@ Command approvals arrive as Telegram buttons. **Always** adds a permanent entry 
 
 ## n8n
 
-- Hermes reaches the owner's n8n Cloud instance over MCP (`mcp_servers.n8n`, token from `N8N_MCP_TOKEN`). Scope is **all workflows** n8n marks "Available in MCP" (22 `UFC | ` workflows on 2026-10-28). Selected tools: workflow read, search, edit (`update_workflow`, `create_workflow_from_code`), test, execute, publish/unpublish, version restore, validation, node reference, instance activity, projects, folders and tags. Excluded: credentials and `explore_node_resources`, all data-table tools, `archive_workflow`, n8n Agent tools and gateway services. The list lives in `ansible/playbooks/hermes-n8n-mcp.yml`.
-- The root-owned skill `/etc/hermes-skills/n8n-workflows/SKILL.md` tells Hermes to read first, note the rollback version, validate and test before publishing, and report the rollback version after.
+- Hermes reaches the owner's n8n Cloud instance over MCP (`mcp_servers.n8n`, token from `N8N_MCP_TOKEN`) with **all 58 tools** (owner decision 2026-10-28; no `tools.include` filter): workflows, executions, versions, data tables, credentials (names and types only), folders, projects, tags, archiving and n8n Agents. Workflow scope is whatever n8n marks "Available in MCP" (22 `UFC | ` workflows); data tables are visible instance-wide (37 on 2026-10-28, of which 27 are named `legacy | ` and left over from archived workflows).
+- The root-owned skill `/etc/hermes-skills/n8n-workflows/SKILL.md` tells Hermes to read first, note the rollback version, validate and test before publishing, and report the rollback version after. It also requires asking the owner before `delete_data_table_column` (data tables are not backed up), `archive_workflow`, and deleting, unpublishing or reverting n8n Agents, and limits `call_agent` to owner requests.
 - **Rollback a bad publish:** in n8n, open the workflow's version history and restore the previous version, then publish; or ask Hermes to `restore_workflow_version` and `publish_workflow` with the version ID it reported.
 - **Exports outside Hermes:** `hermes-n8n-export.timer` (nightly about 03:30 Melbourne, `Persistent=true`) runs `/usr/local/sbin/hermes-n8n-export` as root and writes each workflow's full JSON to `/var/backups/n8n/<UTC timestamp>/<id>.json`, keeping 30 runs. The `hermes` account cannot read that directory. Run one now with `sudo systemctl start hermes-n8n-export`. To restore from an export, copy the file off the VM and use n8n's **Import from File** on the `workflow` object; this creates a new, unpublished workflow.
 - **Revoke n8n access:** revoke the MCP token in n8n, or turn instance-level MCP off.
