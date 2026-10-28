@@ -13,15 +13,14 @@ Rules for maintaining this file:
 
 | # | Action | Why it matters | Approval needed | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs not yet in ignored inventory |
+| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs recorded, router reservations not independently checked |
 | 3 | Mitigate the `e1000e` NIC hang on the host | Root cause of the 2026-10-27 outage; recurs under VM load and presents as "the whole homelab vanished" | Yes — host driver/kernel change | ~30 min + reboot | Not started |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
-| 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
+| 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Logrotate fixed; one old venv package remains |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
-| 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | `codex sandbox` fails with EPERM for every command, so codex currently runs unconfined as `coder`; fixing it would restore `workspace-write` | No — guest-local diagnosis | ~1 h | Open; worked around |
-| 14 | Add DeepSeek Harness to the pinned CLI installer | A rebuilt dev VM must retain the manually installed `dsh` | No — repo change, `bash -n` and tests | 30 min | Source and guest check completed; deployment verification pending |
+| 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
 
 ## Detail
 
@@ -31,7 +30,7 @@ Autostart ordering and the dev VM's firewall acceptance now depend on fixed addr
 
 - Done when: each device holds a reservation in the router, MAC addresses are recorded in the ignored site inventory, and a host reboot shows unchanged addresses.
 - 2026-10-27: the owner reported making the reservations. A Proxmox reboot later the same evening kept `.10`, `.124` and `.232`. The MACs (host `nic0`, VM 100 and VM 130 `net0`) are readable from `ip -br link` on the host and `qm config`; record them in the ignored inventory to close this. The QNAP address is still unconfirmed by identity.
-- The firewall rules in `proxmox/firewall/` reference these addresses; review them in the same change.
+- The firewall rules in `proxmox/firewall/` reference these addresses; review them in the same change. On 2026-10-28 the host and all three VM MAC addresses were read from Proxmox and recorded in ignored site inventory. Router reservations are still not independently checked.
 
 ### 3. `e1000e` NIC hang
 
@@ -57,9 +56,9 @@ Still listed as pending in [shared context](context.md) since the first mileston
 
 ### 7. dev VM package leftovers
 
-- 2026-10-28: `/etc/logrotate.d/cloud-init` is an obsolete `cloud-init` conffile that duplicates `cloud-init-base`, so `logrotate.service` fails ("duplicate log entry for /var/log/cloud-init-output.log") and the guest reports `degraded`. Fix as with the GRUB leftover: back it up, remove it, confirm `logrotate` and `systemctl is-system-running`. Check `dpkg-query -W -f='${Conffiles}' <package>` for other `obsolete` entries.
-- 7 `rc`-state package configs (`dpkg -l | awk '$1=="rc"'`) and the stale `/var/lib/ubuntu-release-upgrader/release-upgrade-available` marker.
-- Done when: `dpkg -l` shows no `rc` entries that are not deliberately kept, and the marker is gone.
+- 2026-10-28: verified that the obsolete `/etc/logrotate.d/cloud-init` was byte-identical to the current `cloud-init-base` file, moved it to `/root/obsolete-conffiles/cloud-init-logrotate-20261028`, checked `logrotate -d`, and restarted `logrotate.service`. `Result=success` and `systemctl is-system-running` returned `running`.
+- Backed up removed-package configuration and purged `keyboxd`, `networkd-dispatcher`, `pollinate`, `python3.12-minimal` and `sosreport`; the empty stale upgrade marker was moved to `/root/obsolete-conffiles/`.
+- `python3.12-venv` remains in `rc` state. Its purge script removes shared `/usr/lib/python-wheels` and `/var/lib/python-wheels`, while newer Python venv packages are installed. Do not purge without reviewing the shared-path effects; document a deliberate keep decision or prove cleanup safe.
 
 ### 8. Hermes Telegram gateway
 
@@ -71,17 +70,9 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 
 ### 13. codex sandbox failure on the dev VM
 
-`codex sandbox -- /bin/true` fails with `Error: Permission denied (os error 13)` for every command, so every model-generated shell command is refused. Ruled out: the AppArmor userns restriction (disabled temporarily, still failed), missing userns support (`unshare -Ur` succeeds when the restriction is off), seccomp on the account, and a broken bubblewrap (`bwrap --dev-bind / / -- <codex> --version` works). An AppArmor `userns` profile for the vendored binaries changed nothing and was removed.
+The previously observed EPERM is not currently reproducible, so its underlying cause is still unknown. On 2026-10-28, `/usr/bin/bwrap` was 0.11.1 and the AppArmor user-namespace restriction remained enabled. Both the PATH-selected Codex 0.165.0 and the pinned-prefix Codex 0.164.0 succeeded with `codex sandbox -- /bin/true`. With an explicit workspace-write policy, both allowed a write inside a disposable workspace and denied a write outside it.
 
-- Workaround in place: `sandbox_mode = "danger-full-access"` and `approval_policy = "on-request"` in `/home/coder/.codex/config.toml`, so commands run unconfined as `coder`. See [the decision record](../docs/dev-vm-coder-capabilities.md).
-- Next: capture the failing `bwrap` invocation (strace on `clone3`/`clone`/`execve`, or log the argv bwrap receives) and compare it with the working manual invocation.
-- Done when: the cause is identified, `workspace-write` is restored, and one command is observed running under the sandbox.
-- Not done from the workaround: the guest is currently running without codex's sandbox.
-
-### 14. DeepSeek Harness in the pinned installer
-
-- `dsh` 0.2.1-rc.2 is installed under `coder`. The installer and manifest now pin its top-level tarball SHA-512; an isolated install succeeded and the new read-only `--check` matched the live VM versions and launchers. The installer update still needs to be merged and installed on the guest. Transitive npm dependencies are not individually pinned by this checksum.
-- Done when: the manifest pins `dsh` with a reviewed checksum, the installer installs it, `bash -n` and the tests pass, and a check run on the dev VM reports no change.
+Restored `sandbox_mode = "workspace-write"` while preserving `approval_policy = "on-request"`; the prior private configuration is `/home/coder/.codex/config.toml.pre-workspace-sandbox-20261028`. A real ephemeral Codex 0.165.0 session reported `workspace-write` and successfully ran `/bin/pwd`. The standalone `codex sandbox` command without an explicit policy remained read-only in testing; do not confuse it with an end-to-end workspace-write session. Follow up if EPERM recurs or its cause can be established; do not claim a root cause from the successful retest.
 
 ## Closed
 
@@ -89,6 +80,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 
 | Item | Evidence |
 | --- | --- |
+| DeepSeek Harness in the pinned installer | PR #63 pinned dsh 0.2.1-rc.2 and the top-level tarball SHA-512; isolated install and `dsh --version` succeeded. The updated guest installer matched the merged source SHA-256, and its read-only check matched installed versions and launchers. Installed contents and transitive dependencies are not independently hashed. |
 | Hermes GitHub access | Fine-grained PAT on all repositories (owner decision; App judged overkill; branch protection unavailable on the free plan). In private scratch repo `hermes-sandbox-test`: Hermes cloned, committed, pushed a branch and opened a PR; force-push to `main` blocked by the deny rule; workflow-file push rejected by GitHub; no token in logs (2026-10-28). See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | VM backups and restore test | Job `backup-every-3-days` (VMs 100, 101, 130; every 3 days at 02:30; keep last 15) to NFS storage `qnap-backups` on a dedicated QNAP share; first run OK, 14.4 GB; VM 100 restored to VMID 900 with a new MAC and the link down, booted with its tools present, then destroyed (2026-10-28). Backup warnings and failures alert the owner on Telegram through `the alerts bot`; a forced failure was delivered. See [Proxmox backups](../docs/proxmox-backups.md) |
 | QTS with a valid certificate | `tailscale serve --bg --https=8443 https+insecure://127.0.0.1:443` on the QNAP after enabling tailnet HTTPS certificates; Let's Encrypt certificate for the NAS's tailnet name, auto-renewed. See [QNAP access](../docs/qnap-access.md) |

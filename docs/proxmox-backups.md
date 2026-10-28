@@ -20,7 +20,7 @@ Paperless documents live on the QNAP's own `paperless` share and are not inside 
 
 Created by the owner in QTS on 2026-10-28: shared folder `proxmox-backups` on the existing data volume; NFS host access for the Proxmox host's address only, read/write, `NO_ROOT_SQUASH` (vzdump writes as root), security `sys`. `showmount -e` lists `/proxmox-backups` for the Proxmox host only and `/paperless` for the application VM only. Plex shares were not touched.
 
-The share has the QNAP Recycle Bin (`@Recycle`) enabled. Pruned backups land there and keep using space; turn the Recycle Bin off for this share in QTS (shared folder → Edit Properties).
+On 2026-10-28 the owner reported that the QNAP Recycle Bin is off for this backup share. This is an operator report; it has not been independently verified in QTS.
 
 ## Evidence (2026-10-28)
 

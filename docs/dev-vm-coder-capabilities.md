@@ -2,6 +2,10 @@
 
 Date: 2026-10-28. Decision record for changes made to VM 100 (`dev`) so the coding account can execute commands and maintain packages, without granting general root. Rollback for every change is listed at the end.
 
+## Current status update (2026-10-28)
+
+The earlier failure below is historical: the EPERM is not currently reproducible. Both installed Codex 0.164.0 and the PATH-selected 0.165.0 passed a harmless sandbox command and explicit workspace-write tests. Restored `workspace-write` while keeping `on-request`; a real ephemeral 0.165.0 session reported workspace-write and successfully executed `/bin/pwd`. The original root cause remains unknown. A standalone `codex sandbox` invocation without an explicit policy was read-only in testing, so it is not equivalent to the real session test. The previous configuration is retained privately at `~/.codex/config.toml.pre-workspace-sandbox-20261028`.
+
 ## Symptoms reported
 
 - `opencode` "cannot run" on `dev`.
@@ -47,7 +51,7 @@ General `sudo` remains denied. `coder` still cannot install arbitrary software, 
 - `visudo -c` parses both `/etc/sudoers` and the new drop-in.
 - No AppArmor profiles, sysctls or other tuning remain from the failed experiments (`aa-status` shows no `codex` profiles; `apparmor_restrict_unprivileged_userns` is back to `1`).
 
-**Not verified:** a live codex command. The config is in place, but proving it needs one model-backed run by the operator (for example a throwaway prompt asking to run `id`). Do not record this as fixed until that run shows a command actually executing.
+The earlier workaround was subsequently replaced by workspace-write and a live sandboxed command, as described in the current status update above.
 
 ## Tooling installed
 
@@ -60,7 +64,7 @@ General `sudo` remains denied. `coder` still cannot install arbitrary software, 
 
 ## Risks this creates
 
-- A prompt-injected agent can run any command that `coder` can: read the repository and any credentials in that account, use the internet, and overwrite its own files. It cannot escalate to root, but it no longer gets even the weak protection codex's sandbox would have provided.
+- The historical danger-full-access workaround removed Codex sandbox restrictions. Workspace-write has since been restored and verified as described above, but coding agents can still access data deliberately made available within their allowed workspace.
 - The apt wrapper is a standing root path. It is argument-free and fixed, but every nightly-style upgrade carries normal package-upgrade risk; the guest is also updated automatically at 03:00 by `unattended-upgrades`, so the wrapper is for on-demand use.
 - Both changes are guest-local. The host firewall, the `tag:dev` tailnet policy with no grants, and the absence of management routes are unchanged and remain the real containment.
 
