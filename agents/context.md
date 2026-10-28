@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: owner decision that Hermes administers its own VM. Hermes now has passwordless sudo on VM 101, runs commands on the VM instead of in a Docker sandbox, and has approval prompts off (force-push and branch-delete denies kept). The Proxmox firewall wall to the home network is unchanged. Snapshot `pre-hermes-sudo-20261028` was taken first. See the [Hermes runbook](../docs/hermes-runbook.md).
+
 2026-10-28: Hermes skills are now all writable by Hermes. The `n8n-workflows` skill moved from root-owned `/etc/hermes-skills` into `~/.hermes/skills` at the owner's request, after Hermes was refused when recording a lesson. Hermes then added a Switch-node pitfall on its own. See the [Hermes runbook](../docs/hermes-runbook.md).
 
 2026-10-28: merged records from an unmerged branch (`docs/hermes-agent-plan`) left by another agent: the dev VM coder-capabilities decision, a DeepSeek Harness install, and a second GRUB root cause. Their live state was re-verified on the dev VM before merging (apt wrapper and sudoers entry, codex `danger-full-access`, `dsh` 0.2.1-rc.2, GRUB guard present and `grub2-common` successful). That branch's Hermes planning entries were superseded by the deployed design and were not merged. The branch was then deleted.

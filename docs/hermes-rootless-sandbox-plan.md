@@ -97,3 +97,12 @@ Owner decision: a **fine-grained personal access token on all repositories** ins
 ## Writable skills (2026-10-28)
 
 Hermes tried to record an n8n pitfall in the root-owned `/etc/hermes-skills/n8n-workflows` and was refused. Owner decision: Hermes must be able to improve its own skills, so the skill moved to `~/.hermes/skills/software-development/n8n-workflows/` (owned by `hermes`), `skills.external_dirs` was set to `[]`, and `/etc/hermes-skills` was removed (copy in `/root/obsolete-conffiles/hermes-skills-20261028`; previous config `config.yaml.pre-skills-move-20261028`). Trade-off accepted: Hermes, or text it reads, can now weaken its own ask-first rules; the skill was advisory anyway. Verified: gateway active, `hermes skills list` shows `n8n-workflows` as local, and `hermes chat -q` added a Switch-node pitfall to the skill in 7 seconds with its skill tools.
+
+## Self-administration replaces the sandbox (2026-10-28)
+
+Owner decision: Hermes must be productive and manage its own VM (packages, Ubuntu upgrades), so the per-command Docker sandbox and approval prompts were judged friction rather than protection. The VM is treated as the sandbox: the Proxmox firewall keeps it off private networks, it is backed up every 3 days, and its credentials are capped or revocable.
+
+- Proxmox snapshot `pre-hermes-sudo-20261028` taken first; previous config `config.yaml.pre-sudo-20261028`.
+- `/etc/sudoers.d/60-hermes-admin` (NOPASSWD: ALL, `visudo` clean); `terminal.backend: local`, `terminal.cwd: /home/hermes/workspaces`; `approvals.mode: 'off'` (written directly, because `hermes config set` stores `"off"` with its quotes). The 7 deny rules stay, and Hermes's own evals show they apply with approvals off.
+- Git: global config for `hermes` with a credential helper that reads the token from `~/.hermes/.env` (the local backend scrubs Hermes-managed secrets from child environments); `git credential fill` returned a `github_pat_` token.
+- Skill `vm-self-admin` seeded in `~/.hermes/skills/devops/` (editable by Hermes): upgrade freely, run disruptive jobs detached with `systemd-run` because restarting the gateway ends its turn, and ask the owner before a release upgrade so a snapshot can be taken. VM 101 is on Ubuntu 24.04.5.

@@ -8,7 +8,7 @@ Operating guide for the Hermes agent on VM 101 (`hermes-agent`). Design and deci
 | --- | --- | --- |
 | VM 101 | Proxmox `pve1`, `onboot: 1`, `startup: order=3` | Yes, after VMs 100 and 130 |
 | Telegram gateway | `hermes` user service `hermes-gateway.service` (`hermes gateway run`, `Restart=always`) | Yes, through user lingering |
-| Sandbox | Rootless Docker (`systemctl --user` `docker`) under `hermes`; a fresh `nousresearch/hermes-sandbox@sha256:c7d8607d…` container per session, 2 CPU / 4 GiB | Yes, through user lingering |
+| Commands | Run directly on VM 101 as `hermes` (Hermes `local` terminal backend), with passwordless sudo (`/etc/sudoers.d/60-hermes-admin`) and approval prompts off. Hermes manages its own packages and upgrades; see its `vm-self-admin` skill. Rootless Docker under `hermes` remains for Hermes's own use | Yes, through user lingering |
 | Network wall | Proxmox VM firewall `/etc/pve/firewall/101.fw`: private ranges, CGNAT and IPv6 rejected; public internet open | Yes, with the host |
 | In-guest guard | `hermes-egress.service` loads `/etc/hermes-egress.nft`: the `hermes` account and its sandboxes cannot reach private addresses, including the VM's own LAN address (router DNS allowed). Disable for diagnosis with `systemctl stop hermes-egress` | Yes |
 
@@ -63,13 +63,15 @@ Stored in `/home/hermes/.hermes/.env` (owner `hermes`, mode 600), entered only t
 | `github` | `GITHUB_TOKEN` | Fine-grained PAT `hermes-homelab`: all repositories, Contents and Pull requests read/write, no Workflows/Administration/Secrets/Webhooks, 90-day expiry. Acts as the owner | GitHub → Settings → Developer settings → Fine-grained tokens |
 | `n8n-mcp` | `N8N_MCP_TOKEN` | Instance-level MCP token (JWT `aud: mcp-server-api`); all 58 tools | n8n → Settings → Instance-level MCP → revoke the access token |
 
-Git in the sandbox: `terminal.docker_forward_env` passes `GITHUB_TOKEN` into each container, and `terminal.docker_env` sets `GIT_CONFIG_*` for a credential helper on `https://github.com` and the commit identity `Hermes (kevinofsydney)` with the owner's no-reply email. There is no `gh` CLI in the sandbox image; pull requests go through the REST API.
+Git: `hermes`'s global git config has a credential helper that reads `GITHUB_TOKEN` from `~/.hermes/.env`, plus a credential helper on `https://github.com` and the commit identity `Hermes (kevinofsydney)` with the owner's no-reply email. `gh` is not installed; Hermes may install it, otherwise pull requests go through the REST API.
 
 To rotate: create the new value at the provider, run `sudo -iu hermes hermes-secret <name> --replace`, restart the gateway, then revoke the old value.
 
 ## Configuration
 
 `ansible/playbooks/hermes-sandbox-config.yml` holds the reviewed settings: sandbox image digest and limits, approvals (`manual` plus a deny list), checkpoints, redaction, telemetry off, Exa web search and the model. Change settings there first, then apply. The pre-hardening config is kept as `~/.hermes/config.yaml.pre-hardening-20261028`.
+
+**Self-administration (owner decision 2026-10-28).** `ansible/playbooks/hermes-self-admin.yml` gives `hermes` passwordless sudo, switches to the `local` backend and turns approval prompts off. The deny list still applies with approvals off. Accepted risk: a prompt injection or model mistake can do anything on VM 101 and read every Hermes credential; the Proxmox firewall still keeps it off the home network, and recovery is a snapshot or the 3-day backup plus rotating keys. Hermes asks the owner before an Ubuntu release upgrade so a snapshot can be taken first. To revert: restore `~/.hermes/config.yaml.pre-sudo-20261028`, remove `/etc/sudoers.d/60-hermes-admin`, restart the gateway.
 
 Command approvals arrive as Telegram buttons. **Always** adds a permanent entry to `command_allowlist`: the owner kept `script execution via -e/-c` on 2026-10-28. Clear all such entries with `hermes config set command_allowlist '[]'`.
 

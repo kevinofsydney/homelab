@@ -1,0 +1,2 @@
+# Hermes manages its own VM (owner decision 2026-10-28).
+hermes ALL=(ALL:ALL) NOPASSWD: ALL

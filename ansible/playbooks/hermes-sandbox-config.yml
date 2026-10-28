@@ -4,6 +4,8 @@
 # UFC/Hermes handoff. Does not add credentials or start the gateway.
 # GITHUB_TOKEN (fine-grained PAT, entered with `hermes-secret github`) is forwarded into
 # sandboxes, where GIT_CONFIG_* env sets a credential helper and the commit identity.
+# Since 2026-10-28 Hermes runs commands on the VM itself (hermes-self-admin.yml sets the local
+# backend and approvals off); the docker settings here only apply if the sandbox is restored.
 - name: Pin the Hermes sandbox image and harden the dormant agent configuration
   hosts: hermes_agents
   become: true
@@ -19,7 +21,6 @@
       terminal.docker_volumes: '["/home/hermes/workspaces:/workspace/projects"]'
       terminal.docker_mount_cwd_to_workspace: "false"
       terminal.timeout: "900"
-      approvals.mode: manual
       approvals.timeout: "300"
       approvals.deny: '["git push --force*", "git push -f*", "*git push*+*", "git push * --delete*", "git push * :*", "*curl*|*sh*", "*wget*|*sh*"]'
       checkpoints.enabled: "true"

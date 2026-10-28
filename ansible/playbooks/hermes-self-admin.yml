@@ -1,0 +1,68 @@
+---
+# Owner-approved 2026-10-28: Hermes administers its own VM. Commands run directly on the
+# guest (local backend) as `hermes` with passwordless sudo, and approval prompts are off;
+# the deny list in hermes-sandbox-config.yml still applies. The Proxmox VM firewall keeps the
+# guest off private networks. Run after hermes-sandbox-config.yml.
+- name: Let Hermes administer its own VM
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  vars:
+    hermes_git_helper: >-
+      !f() { test "$1" = get && echo username=x-access-token &&
+      echo "password=$(sed -n "s/^GITHUB_TOKEN=//p" ~/.hermes/.env | tr -d "\"'")"; }; f
+  tasks:
+    - name: Require the reviewed guest
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+
+    - name: Grant passwordless sudo
+      ansible.builtin.copy:
+        src: ../../config/hermes/sudoers/60-hermes-admin
+        dest: /etc/sudoers.d/60-hermes-admin
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    # Hermes owns and edits this skill; seed it only once.
+    - name: Seed the self-administration skill
+      ansible.builtin.copy:
+        src: ../../config/hermes/skills/vm-self-admin/SKILL.md
+        dest: /home/hermes/.hermes/skills/devops/vm-self-admin/SKILL.md
+        owner: hermes
+        group: hermes
+        mode: '0644'
+        directory_mode: '0755'
+        force: false
+
+    - name: Configure git for hermes
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -u, hermes, --, git, config, --global, "{{ item.name }}", "{{ item.value }}"]
+      loop:
+        - {name: user.name, value: "Hermes (kevinofsydney)"}
+        - {name: user.email, value: "22282813+kevinofsydney@users.noreply.github.com"}
+        - {name: "credential.https://github.com.helper", value: "{{ hermes_git_helper }}"}
+      loop_control:
+        label: "{{ item.name }}"
+      environment:
+        HOME: /home/hermes
+      when: not ansible_check_mode
+
+    - name: Run commands on the VM instead of in a sandbox container
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set {{ item.key }} {{ item.value | quote }}"]
+      loop:
+        - {key: terminal.backend, value: local}
+        - {key: terminal.cwd, value: /home/hermes/workspaces}
+      loop_control:
+        label: "{{ item.key }}"
+      when: not ansible_check_mode
+
+    # `hermes config set` turns a bare `off` into false and keeps quotes literally, so edit the file.
+    - name: Turn approval prompts off
+      ansible.builtin.replace:
+        path: /home/hermes/.hermes/config.yaml
+        regexp: '^(approvals:\n(?:[ \t]+.*\n)*?[ \t]+mode:).*$'
+        replace: "\\1 'off'"
