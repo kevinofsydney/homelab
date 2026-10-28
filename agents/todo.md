@@ -13,7 +13,6 @@ Rules for maintaining this file:
 
 | # | Action | Why it matters | Approval needed | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | VM backups for 100 and 130, plus a restore test | Only unmitigated single point of failure left; the host has already taken two unclean shutdowns and has no validated backup | Yes — host storage and backup job | ~1 h | Not started |
 | 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs not yet in ignored inventory |
 | 3 | Mitigate the `e1000e` NIC hang on the host | Root cause of the 2026-10-27 outage; recurs under VM load and presents as "the whole homelab vanished" | Yes — host driver/kernel change | ~30 min + reboot | Not started |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
@@ -24,14 +23,6 @@ Rules for maintaining this file:
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 
 ## Detail
-
-### 1. VM backups and restore test
-
-No validated backup exists for either guest. The 2026-10-27 incident (a release upgrade interrupted by an unclean host shutdown) would have been unrecoverable if the guest disk had been lost.
-
-- Entry point: [disaster recovery](../docs/disaster-recovery.md), [storage](../docs/storage.md). QNAP backups were deferred by the owner, so a local target on the Dell SSD is an acceptable first step.
-- Done when: a scheduled `vzdump` completes for VM 100 and VM 130; one VM restores to a **new** VM ID and boots with its services healthy; retention and the target's free-space guard are recorded; the result is in [context](context.md).
-- Not done until restored: a completed backup job is not evidence that a restore works.
 
 ### 2. DHCP reservations
 
@@ -79,7 +70,7 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 ### 10. Hermes GitHub App
 
 - Create a GitHub App with Contents and Pull requests read/write only, installed on chosen repositories; protect `main` so the App cannot push to it or merge.
-- Depends on action 1: a backup must exist before an agent holds push rights.
+- The backup prerequisite (former action 1) is met: VM 101 is in the 3-day backup job.
 - Done when: in a scratch repository Hermes clones, branches, commits, pushes its branch and opens a PR; pushing to `main` and force-pushing are refused; no token appears in logs.
 
 ### 12. Fix MagicDNS tailnet-wide (owner console action)
@@ -97,6 +88,8 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 
 | Item | Evidence |
 | --- | --- |
+| VM backups and restore test | Job `backup-every-3-days` (VMs 100, 101, 130; every 3 days at 02:30; keep last 15) to NFS storage `qnap-backups` on a dedicated QNAP share; first run OK, 14.4 GB; VM 100 restored to VMID 900 with a new MAC and the link down, booted with its tools present, then destroyed (2026-10-28). See [Proxmox backups](../docs/proxmox-backups.md) |
+| QTS with a valid certificate | `tailscale serve --bg --https=8443 https+insecure://127.0.0.1:443` on the QNAP after enabling tailnet HTTPS certificates; Let's Encrypt certificate for the NAS's tailnet name, auto-renewed. See [QNAP access](../docs/qnap-access.md) |
 | Hermes n8n MCP connection | 31 of 58 tools on all workflows; `n8n-workflows` skill (root-owned); Hermes read a workflow and ran a pinned test (execution 2214, success); nightly root-only JSON export of all 22 workflows, unreadable by `hermes` (2026-10-28). Importing an export back into n8n is untested. Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md) |
 | Hermes sandbox access to its own SSH | Guest nftables table `inet hermes_egress` via `hermes-egress.service`: uid 1001 and its sandboxes rejected from private ranges except router DNS; sandbox reached the VM's own SSH before, blocked after; DNS and GitHub still work; survived a VM reboot (2026-10-28). Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |

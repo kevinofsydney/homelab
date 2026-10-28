@@ -1,5 +1,7 @@
 # Restore exercises
 
+The live VM backup job, its evidence and the restore commands are in [Proxmox backups](proxmox-backups.md). A VM 100 restore was exercised on 2026-10-28.
+
 ## VM
 
 1. Confirm the Proxmox backup job completed and its artifact exists on the dedicated QNAP share.
