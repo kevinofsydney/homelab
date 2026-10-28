@@ -1,6 +1,7 @@
 ---
 # Owner-approved 2026-10-28 (todo 11): Hermes may work on all n8n workflows.
-# All 58 MCP tools are enabled (owner decision 2026-10-28); the skill sets ask-first rules.
+# All 58 MCP tools are enabled (owner decision 2026-10-28); the skill sets ask-first rules
+# and Hermes may edit it, so the repo copy is only a seed.
 # Requires hermes_n8n_base_url in ignored inventory and N8N_MCP_TOKEN entered by the owner.
 - name: Connect Hermes to n8n over MCP, with a skill and an export job outside its reach
   hosts: hermes_agents
@@ -21,21 +22,23 @@
           - ansible_facts['hostname'] == 'hermes-agent'
           - hermes_n8n_base_url is match('^https://[a-z0-9.-]+$')
 
-    - name: Install the read-only n8n skill
+    # Hermes owns and edits this skill (owner decision 2026-10-28); seed it only once.
+    - name: Seed the n8n skill in Hermes's own skills directory
       ansible.builtin.copy:
         src: ../../config/hermes/skills/n8n-workflows/SKILL.md
-        dest: /etc/hermes-skills/n8n-workflows/SKILL.md
-        owner: root
-        group: root
+        dest: /home/hermes/.hermes/skills/software-development/n8n-workflows/SKILL.md
+        owner: hermes
+        group: hermes
         mode: '0644'
         directory_mode: '0755'
+        force: false
 
     - name: Configure the MCP server and skill directory with the Hermes CLI
       ansible.builtin.command:
         argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set {{ item.key }} {{ item.value | to_json | quote }}"]
       loop:
         - {key: mcp_servers.n8n, value: "{{ hermes_n8n_server }}"}
-        - {key: skills.external_dirs, value: ["/etc/hermes-skills"]}
+        - {key: skills.external_dirs, value: []}
       loop_control:
         label: "{{ item.key }}"
       when: not ansible_check_mode

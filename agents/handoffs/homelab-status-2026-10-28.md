@@ -20,7 +20,7 @@ PR: none open from this session
 ## Owner decisions in force
 
 - Hermes has **open public egress** (private ranges blocked twice: Proxmox VM firewall plus an in-guest nftables guard), for web search.
-- Hermes may use **every n8n MCP tool** on every workflow and data table, with ask-first rules in its root-owned skill. 27 data tables named `RA | …` belong to a retired research agent and are kept as they are; `RA | secrets` is readable by Hermes.
+- Hermes may use **every n8n MCP tool** on every workflow and data table, with ask-first rules in its `n8n-workflows` skill, which Hermes may edit itself. 27 data tables named `RA | …` belong to a retired research agent and are kept as they are; `RA | secrets` is readable by Hermes.
 - GitHub: a **fine-grained token on all repositories** (Contents and Pull requests, no Workflows) instead of a GitHub App. Branch protection is unavailable (free plan, private repos), so Hermes is able to push to `main`; the owner chose not to add deny rules for that.
 - The owner kept the Hermes "Always" approval for inline scripts (`script execution via -e/-c`).
 - Backups every 3 days, expiring after about 45 days, to the QNAP; plain `vzdump`, no Proxmox Backup Server.

@@ -23,6 +23,10 @@ You may use **every** n8n MCP tool, on any workflow, data table, folder or n8n A
 11. **Ask before `archive_workflow`**, and say which workflow and why. Archived workflows can be restored in the n8n UI.
 12. **n8n Agents:** `call_agent` runs an agent on the owner's account and can spend money or message people; use it only when asked. Ask before `delete_agent`, `unpublish_agent` or `revert_agent`.
 
+## Pitfalls
+
+- **Switch node output indices shift.** When you add, remove or reorder rules on an n8n Switch node, every output index shifts, including the fallback output, so connections on the old indices silently point at the wrong branch. After changing a Switch's rules, re-check every outgoing connection, especially the fallback, before publishing.
+
 ## Backups outside your control
 
 A root-owned job on this VM exports every visible workflow's full JSON to `/var/backups/n8n` nightly. Data tables and agents are **not** exported. You cannot read or change those files. n8n's own version history (every `update_workflow` creates a version) is the normal rollback path.
