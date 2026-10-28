@@ -1,0 +1,8 @@
+[Unit]
+Description=Export n8n workflows over MCP to /var/backups/n8n (outside Hermes's reach)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/hermes-n8n-export

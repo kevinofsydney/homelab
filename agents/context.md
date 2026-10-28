@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: Hermes is connected to n8n over MCP (todo 11). It may work on all 22 visible workflows with 31 of 58 tools (no credential, data-table, archive or n8n Agent tools), follows a root-owned `n8n-workflows` skill, and passed a read and a pinned test run. Export-before-publish was revised: n8n version history covers each edit, and a nightly root-only job exports all workflow JSON to `/var/backups/n8n`. Details in the [runbook](../docs/hermes-runbook.md#n8n).
+
 2026-10-28: closed todo 9. A guest nftables guard on VM 101 (`hermes-egress.service`) now stops the `hermes` account and its sandboxes reaching any private address, including the VM's own SSH, while router DNS and the public internet still work; verified before and after a VM reboot. See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md).
 
 2026-10-28: Hermes passed its reboot-recovery test (VM back in 21 s, gateway reconnected to Telegram in 22 s unattended, the owner's next message answered). The [Hermes runbook](../docs/hermes-runbook.md) covers checks, start/stop, the kill switch, credential revocation and rebuild. Remaining Hermes work is todo actions 8 (non-owner test), 9, 10 and 11.

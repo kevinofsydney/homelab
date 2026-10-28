@@ -61,7 +61,7 @@ Clone into `/home/hermes/workspaces`, branch, commit, push **its own branch**, o
 
 Edit and publish are authorised. Because publishing is immediate and there is no freeze window, the guardrails are per-change rather than calendar-based:
 
-1. Export the current workflow JSON to a dated file **before** any publish; the change is not made if the export fails.
+1. ~~Export the current workflow JSON before any publish~~ (revised 2026-10-28): n8n records a version on every `update_workflow`, and the skill requires noting the rollback version before changing anything. A root-owned job exports every workflow's JSON nightly to `/var/backups/n8n`, outside Hermes's reach; see the [runbook](hermes-runbook.md#n8n).
 2. Publish as the final step, after the edit and any test, and log a one-line diff summary first.
 3. Rollback is re-importing the previous export. Version history is a convenience, not the recovery plan.
 4. Inspect the instance's real MCP tool schemas first: publishing may be a parameter of an update tool rather than a separate one, and every tool that runs, tests or executes is side-effecting until proven otherwise.

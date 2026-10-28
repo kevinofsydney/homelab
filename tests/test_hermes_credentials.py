@@ -1,4 +1,6 @@
 """Credential helper file handling; no real credentials are used."""
+import base64
+import json
 import importlib.util
 import os
 from pathlib import Path
@@ -51,6 +53,20 @@ class CredentialsTests(unittest.TestCase):
         self.assertIsNotNone(pattern.fullmatch("0123abcd-4567-89ef-0123-456789abcdef"))
         self.assertIsNone(pattern.fullmatch("short"))
         self.assertIsNone(pattern.fullmatch("has space in it 1234567890"))
+
+    def test_n8n_mcp_token_requires_mcp_audience(self):
+        def token(claims):
+            body = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=")
+            return "eyJhbGciOiJIUzI1NiJ9." + body + ".c2lnbmF0dXJl"
+
+        key, pattern = module.FIELDS["n8n-mcp"]
+        self.assertEqual(key, "N8N_MCP_TOKEN")
+        good = token({"aud": "mcp-server-api", "sub": "x"})
+        self.assertIsNotNone(pattern.fullmatch(good))
+        self.assertIsNone(module.check_value("n8n-mcp", good))
+        self.assertIsNotNone(module.check_value("n8n-mcp", token({"aud": "public-api"})))
+        self.assertIsNotNone(module.check_value("n8n-mcp", "not.a.jwt"))
+        self.assertIsNone(pattern.fullmatch("oc_live_1234567890abcdef"))
 
 if __name__ == "__main__":
     unittest.main()

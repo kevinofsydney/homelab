@@ -1,0 +1,115 @@
+---
+# Owner-approved 2026-10-28 (todo 11): Hermes may work on all n8n workflows.
+# Excluded tools: credentials, data tables, archiving, n8n Agents and gateway services.
+# Requires hermes_n8n_base_url in ignored inventory and N8N_MCP_TOKEN entered by the owner.
+- name: Connect Hermes to n8n over MCP, with a skill and an export job outside its reach
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  vars:
+    hermes_n8n_tools:
+      - get_workflow_details
+      - get_workflow_history
+      - get_workflow_version
+      - get_workflow_versions_diff
+      - get_workflow_execution
+      - search_workflows
+      - search_workflow_executions
+      - update_workflow
+      - create_workflow_from_code
+      - restore_workflow_version
+      - publish_workflow
+      - unpublish_workflow
+      - prepare_workflow_pin_data
+      - test_workflow
+      - execute_workflow
+      - validate_workflow
+      - validate_node_config
+      - search_nodes
+      - get_node_types
+      - get_node_usage
+      - get_workflow_sdk_reference
+      - get_workflow_best_practices
+      - get_instance_context
+      - get_instance_activity
+      - expand_instance_activity
+      - search_projects
+      - search_folders
+      - list_workflow_tags
+      - create_folder
+      - update_folder
+      - move_workflows_to_folder
+    hermes_n8n_server:
+      url: "{{ hermes_n8n_base_url }}/mcp-server/http"
+      headers:
+        Authorization: "Bearer ${N8N_MCP_TOKEN}"
+      enabled: true
+      timeout: 120
+      connect_timeout: 30
+      tools:
+        include: "{{ hermes_n8n_tools }}"
+  tasks:
+    - name: Require the reviewed guest and an n8n base URL
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+          - hermes_n8n_base_url is match('^https://[a-z0-9.-]+$')
+
+    - name: Install the read-only n8n skill
+      ansible.builtin.copy:
+        src: ../../config/hermes/skills/n8n-workflows/SKILL.md
+        dest: /etc/hermes-skills/n8n-workflows/SKILL.md
+        owner: root
+        group: root
+        mode: '0644'
+        directory_mode: '0755'
+
+    - name: Configure the MCP server and skill directory with the Hermes CLI
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set {{ item.key }} {{ item.value | to_json | quote }}"]
+      loop:
+        - {key: mcp_servers.n8n, value: "{{ hermes_n8n_server }}"}
+        - {key: skills.external_dirs, value: ["/etc/hermes-skills"]}
+      loop_control:
+        label: "{{ item.key }}"
+      when: not ansible_check_mode
+
+    - name: Install the export script
+      ansible.builtin.copy:
+        src: ../../scripts/hermes/n8n-export.py
+        dest: /usr/local/sbin/hermes-n8n-export
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Record the MCP URL for the export job
+      ansible.builtin.copy:
+        content: "N8N_MCP_URL={{ hermes_n8n_base_url }}/mcp-server/http\n"
+        dest: /etc/hermes-n8n-export.conf
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Create the root-only export directory
+      ansible.builtin.file:
+        path: /var/backups/n8n
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Install the export service and timer
+      ansible.builtin.copy:
+        src: "../../systemd/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: [hermes-n8n-export.service, hermes-n8n-export.timer]
+
+    - name: Enable the nightly export
+      ansible.builtin.systemd_service:
+        name: hermes-n8n-export.timer
+        enabled: true
+        state: started
+        daemon_reload: true

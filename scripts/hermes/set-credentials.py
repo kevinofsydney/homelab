@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Interactively add Hermes credentials without putting secrets in arguments."""
 import argparse
+import base64
 import getpass
+import json
 import os
 import pwd
 from pathlib import Path
@@ -15,7 +17,26 @@ FIELDS = {
     "openrouter": ("OPENROUTER_API_KEY", re.compile(r"sk-or-[A-Za-z0-9_-]+")),
     "owner": ("TELEGRAM_ALLOWED_USERS", re.compile(r"[1-9][0-9]{0,19}")),
     "exa": ("EXA_API_KEY", re.compile(r"[A-Za-z0-9_-]{16,128}")),
+    "n8n-mcp": ("N8N_MCP_TOKEN", re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")),
 }
+
+
+def jwt_audience(token):
+    """Return the unverified `aud` claim of a JWT, or None if it cannot be read."""
+    try:
+        payload = token.split(".")[1]
+        claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+    except (IndexError, ValueError):
+        return None
+    audience = claims.get("aud") if isinstance(claims, dict) else None
+    return audience if isinstance(audience, str) else None
+
+
+def check_value(field, value):
+    """Return an error message when a well-formed value is still the wrong kind of credential."""
+    if field == "n8n-mcp" and jwt_audience(value) != "mcp-server-api":
+        return "Not an n8n instance MCP access token (expected aud mcp-server-api; an n8n REST API key has aud public-api)"
+    return None
 
 
 def write_value(home, key, value, replace=False):
@@ -68,6 +89,9 @@ def main():
     value = getpass.getpass(f"Enter {args.field} value (input hidden): ").strip()
     if not pattern.fullmatch(value):
         parser.exit(2, "Invalid value format; nothing saved.\n")
+    problem = check_value(args.field, value)
+    if problem:
+        parser.exit(2, f"{problem}; nothing saved.\n")
     try:
         write_value(Path.home(), key, value, args.replace)
     except (OSError, ValueError) as error:

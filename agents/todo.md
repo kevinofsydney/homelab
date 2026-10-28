@@ -21,7 +21,6 @@ Rules for maintaining this file:
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
-| 11 | Hermes n8n MCP connection | Lets Hermes inspect, edit, test and publish n8n workflows | Yes — MCP token | ~45 min | Not started |
 
 ## Detail
 
@@ -82,18 +81,13 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - Depends on action 1: a backup must exist before an agent holds push rights.
 - Done when: in a scratch repository Hermes clones, branches, commits, pushes its branch and opens a PR; pushing to `main` and force-pushing are refused; no token appears in logs.
 
-### 11. Hermes n8n MCP
-
-- Scope: **all workflows** in the instance (owner decision 2026-10-28; the `UFC | ` name scope and any allowlist are dropped). Tool exclusions for credentials, data tables and archive/delete remain unless the owner widens them.
-- Export each workflow's JSON before every publish; the change is not made if the export fails.
-- Done when: the MCP token is loaded by the owner, `hermes mcp list` shows the intended tools, a read and a test run work, and an export is restored successfully.
-
 ## Closed
 
 Recorded here so a fresh agent does not redo them. Dates are the day the work was verified.
 
 | Item | Evidence |
 | --- | --- |
+| Hermes n8n MCP connection | 31 of 58 tools on all workflows; `n8n-workflows` skill (root-owned); Hermes read a workflow and ran a pinned test (execution 2214, success); nightly root-only JSON export of all 22 workflows, unreadable by `hermes` (2026-10-28). Importing an export back into n8n is untested. Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md) |
 | Hermes sandbox access to its own SSH | Guest nftables table `inet hermes_egress` via `hermes-egress.service`: uid 1001 and its sandboxes rejected from private ranges except router DNS; sandbox reached the VM's own SSH before, blocked after; DNS and GitHub still work; survived a VM reboot (2026-10-28). Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
