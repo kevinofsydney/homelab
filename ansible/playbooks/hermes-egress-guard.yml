@@ -1,0 +1,45 @@
+---
+# Owner-approved 2026-10-28 (todo 9). Blocks the hermes account and its rootless
+# sandboxes from private addresses, including the guest's own LAN address.
+- name: Install the Hermes guest egress guard
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require the reviewed guest and account
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+
+    - name: Confirm hermes still has uid 1001, which the rules match
+      ansible.builtin.command: id -u hermes
+      register: hermes_uid
+      changed_when: false
+      failed_when: hermes_uid.stdout != '1001'
+      check_mode: false
+
+    - name: Install the nftables table
+      ansible.builtin.copy:
+        src: ../../config/hermes/hermes-egress.nft
+        dest: /etc/hermes-egress.nft
+        owner: root
+        group: root
+        mode: '0644'
+        validate: /usr/sbin/nft -c -f %s
+      register: hermes_egress_rules
+
+    - name: Install the service that loads it at boot
+      ansible.builtin.copy:
+        src: ../../systemd/hermes-egress.service
+        dest: /etc/systemd/system/hermes-egress.service
+        owner: root
+        group: root
+        mode: '0644'
+      register: hermes_egress_unit
+
+    - name: Enable and (re)load the guard
+      ansible.builtin.systemd_service:
+        name: hermes-egress.service
+        enabled: true
+        state: "{{ 'restarted' if (hermes_egress_rules.changed or hermes_egress_unit.changed) else 'started' }}"
+        daemon_reload: "{{ hermes_egress_unit.changed }}"

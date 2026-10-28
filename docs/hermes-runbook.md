@@ -10,6 +10,7 @@ Operating guide for the Hermes agent on VM 101 (`hermes-agent`). Design and deci
 | Telegram gateway | `hermes` user service `hermes-gateway.service` (`hermes gateway run`, `Restart=always`) | Yes, through user lingering |
 | Sandbox | Rootless Docker (`systemctl --user` `docker`) under `hermes`; a fresh `nousresearch/hermes-sandbox@sha256:c7d8607d…` container per session, 2 CPU / 4 GiB | Yes, through user lingering |
 | Network wall | Proxmox VM firewall `/etc/pve/firewall/101.fw`: private ranges, CGNAT and IPv6 rejected; public internet open | Yes, with the host |
+| In-guest guard | `hermes-egress.service` loads `/etc/hermes-egress.nft`: the `hermes` account and its sandboxes cannot reach private addresses, including the VM's own LAN address (router DNS allowed). Disable for diagnosis with `systemctl stop hermes-egress` | Yes |
 
 The guest's address and SSH host key are in ignored site inventory. Administrators connect as `devops` (key-only) and act on the agent as `hermes`:
 

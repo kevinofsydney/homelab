@@ -52,7 +52,7 @@ Configuration applied with the owner's approval (equivalent to `ansible/playbook
 
 Sandbox test (the pinned image, run as `hermes` with `--cpus 2 --memory 4096m` and the workspace mount): cgroup `cpu.max` `200000 100000`, `memory.max` 4294967296; Proxmox 8006, QNAP 443, router 80 and home-services 22 **blocked**; `api.github.com` 200 and `api.exa.ai` reachable.
 
-Finding: the sandbox **can** connect to the Hermes VM's own LAN address on TCP 22. That traffic stays inside the guest, so the Proxmox VM firewall does not see it. Guest SSH is key-only, so the risk is low; closing it needs a guest nftables rule rejecting `hermes`-owned traffic to private ranges, which requires approval.
+Finding: the sandbox **can** connect to the Hermes VM's own LAN address on TCP 22. That traffic stays inside the guest, so the Proxmox VM firewall does not see it. **Closed 2026-10-28**; see the guest egress guard below.
 
 Not yet verified: Hermes itself launching a sandbox session (no model provider is configured), the gateway, and any credential other than the owner ID.
 
@@ -64,3 +64,5 @@ Not yet verified: Hermes itself launching a sandbox session (no model provider i
 - One-shot test `hermes chat -q "Reply with exactly: HERMES_OK" -t clarify`: reply `HERMES_OK`, 8 s, no tool calls.
 - One-shot test with `-t web` asking for the Hermes docs URL: the model called `web_search`, the result came back wrapped as `untrusted_tool_result`, and the reply was `https://hermes-agent.nousresearch.com/docs/`.
 - Not yet tested: terminal/sandbox use from a model session, the Telegram gateway, GitHub and n8n.
+
+Guest egress guard (todo 9, applied 2026-10-28 with the owner's approval): `config/hermes/hermes-egress.nft` is installed as `/etc/hermes-egress.nft` and loaded by `hermes-egress.service` (enabled, before the hermes user manager); `ansible/playbooks/hermes-egress-guard.yml` is the reproducible install. It adds only table `inet hermes_egress`: traffic owned by uid 1001 (the `hermes` account, which includes rootless sandboxes via slirp4netns) to 10/8, 100.64/10, 169.254/16, 172.16/12, 192.168/16, fc00::/7 and fe80::/10 is rejected, except DNS to the router on port 53, which rootless Docker uses for sandbox lookups. Loopback stays open. A first version without the DNS exception broke sandbox DNS and was corrected before use. Results, from a sandbox container and from `hermes` directly: the VM's own SSH, Proxmox 8006, router 80 and home-services 22 blocked; DNS and `api.github.com` (200) working; root's access to its own SSH unaffected; the gateway stayed active. After a `qm reboot 101` the table loaded by itself, the same sandbox tests passed and the gateway reconnected to Telegram.

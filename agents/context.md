@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: closed todo 9. A guest nftables guard on VM 101 (`hermes-egress.service`) now stops the `hermes` account and its sandboxes reaching any private address, including the VM's own SSH, while router DNS and the public internet still work; verified before and after a VM reboot. See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) and [runbook](../docs/hermes-runbook.md).
+
 2026-10-28: Hermes passed its reboot-recovery test (VM back in 21 s, gateway reconnected to Telegram in 22 s unattended, the owner's next message answered). The [Hermes runbook](../docs/hermes-runbook.md) covers checks, start/stop, the kill switch, credential revocation and rebuild. Remaining Hermes work is todo actions 8 (non-owner test), 9, 10 and 11.
 
 2026-10-28: the Hermes Telegram gateway is live on VM 101 as the `hermes` user service `hermes-gateway.service`, enabled at boot. `the Hermes bot` has groups disabled (`can_join_groups: False`) and only the owner's ID allowed; the owner chatted with it from a private chat and it used the sandbox and memory. The owner's "Always" approval added `script execution via -e/-c flag` to `command_allowlist`. Non-owner and reboot tests are pending. See [credential setup](../docs/hermes-credential-setup.md).

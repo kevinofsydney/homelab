@@ -1,0 +1,15 @@
+[Unit]
+Description=Hermes egress guard: block the hermes account from private addresses
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=network-pre.target user@1001.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/hermes-egress.nft
+ExecStop=/usr/sbin/nft delete table inet hermes_egress
+
+[Install]
+WantedBy=multi-user.target

@@ -20,7 +20,6 @@ Rules for maintaining this file:
 | 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
-| 9 | Close Hermes sandbox access to its own VM's SSH | A sandbox reached VM 101's LAN address on TCP 22; the traffic stays in the guest so the Proxmox firewall cannot see it | Yes — guest firewall rule | ~20 min | Not started |
 | 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
 | 11 | Hermes n8n MCP connection | Lets Hermes inspect, edit, test and publish n8n workflows | Yes — MCP token | ~45 min | Not started |
 
@@ -77,11 +76,6 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 - The owner revokes the old token, enters the new one with `hermes-secret telegram`; `TELEGRAM_ALLOWED_USERS` already holds the owner ID. Never set `GATEWAY_ALLOW_ALL_USERS`.
 - Done when: the gateway runs as a supervised service that survives a restart; Telegram `getMe` matches the intended bot; the owner gets a reply in a private chat; a message from another account gets no reply and is logged as unauthorised; adding the bot to a group is refused.
 
-### 9. Hermes sandbox access to its own SSH
-
-- Add a guest nftables rule rejecting traffic owned by `hermes` (uid 1001, which includes rootless containers via slirp4netns) to private ranges, and keep it in the repository.
-- Done when: a sandbox container can no longer reach `<lan-host>:22`, public HTTPS and DNS still work, and the rule survives a guest reboot.
-
 ### 10. Hermes GitHub App
 
 - Create a GitHub App with Contents and Pull requests read/write only, installed on chosen repositories; protect `main` so the App cannot push to it or merge.
@@ -100,6 +94,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 
 | Item | Evidence |
 | --- | --- |
+| Hermes sandbox access to its own SSH | Guest nftables table `inet hermes_egress` via `hermes-egress.service`: uid 1001 and its sandboxes rejected from private ranges except router DNS; sandbox reached the VM's own SSH before, blocked after; DNS and GitHub still work; survived a VM reboot (2026-10-28). Details in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
 | Hermes reboot recovery and runbook | `qm reboot 101` on 2026-10-28: new boot ID in 21 s, `hermes-gateway` active in 22 s with `NRestarts=0` and `Connected to Telegram`, rootless Docker and the pinned image present, VM firewall rules intact; the owner's next message was logged and answered 3 s later. Runbook: [docs/hermes-runbook.md](../docs/hermes-runbook.md) |
 | Proxmox autostart for both guests | `qm set ... --onboot 1 --startup order=...`; host reboot started VM 100 then VM 130 via `pve-guests.service`; guest services recovered (commit `6e9d7ae`) |
 | dev VM release upgrade to 26.04.1 LTS | `dpkg --audit` empty, 7.0.0-38 kernel, no pending upgrades; the interrupted run stopped at the upgrader's "remove obsolete packages" prompt |
