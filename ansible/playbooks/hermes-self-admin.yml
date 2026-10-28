@@ -37,6 +37,24 @@
         directory_mode: '0755'
         force: false
 
+    # /sysupgrade in Telegram (/upgrade is Hermes's reserved alias for /subscription).
+    - name: Seed the sysupgrade skill
+      ansible.builtin.copy:
+        src: ../../config/hermes/skills/sysupgrade/SKILL.md
+        dest: /home/hermes/.hermes/skills/devops/sysupgrade/SKILL.md
+        owner: hermes
+        group: hermes
+        mode: '0644'
+        directory_mode: '0755'
+        force: false
+
+    # The Telegram menu holds 60 commands and core commands fill it, so pin the skill first.
+    - name: Pin /sysupgrade at the top of the Telegram command menu
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['sysupgrade'] | to_json | quote }}"]
+      changed_when: false
+      when: not ansible_check_mode
+
     - name: Configure git for hermes
       ansible.builtin.command:
         argv: [/usr/sbin/runuser, -u, hermes, --, git, config, --global, "{{ item.name }}", "{{ item.value }}"]

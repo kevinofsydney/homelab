@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: `/sysupgrade` added to the Hermes bot Telegram menu as a Hermes skill (check, report, apply after "apply"). `/upgrade` itself is reserved by Hermes. No tunnel or second bot is needed: the gateway polls Telegram. See the [Hermes runbook](../docs/hermes-runbook.md).
+
 2026-10-28: the owner reported the QNAP backup-share Recycle Bin is off; no independent QTS check was made. Proxmox read-only inspection showed VMs 100/101/130 running, the firewall enabled, SSD SMART health passed with zero media errors, 2% used and 67 lifetime unsafe shutdowns; 39 error-log entries include an `Invalid Field in Command` entry. No NIC-hang messages matched the last 24-hour query. Actual host and VM MACs were added to ignored inventory; router reservations and UPS/power-loss behavior remain unverified.
 
 2026-10-28: fixed the dev VM logrotate duplicate and purged five reviewed removed-package configurations after a root-only backup. The VM reports `running`; `python3.12-venv` remains `rc` pending shared wheel-path review. Both installed Codex versions passed explicit workspace-write isolation checks; restored `workspace-write` and retained `on-request`. An ephemeral model-backed Codex 0.165.0 session ran `/bin/pwd` with workspace-write, while the original EPERM could not be reproduced and its cause remains unknown. Deployed the PR #63 installer to the guest with a private backup and verified the guest/source SHA-256 and zero-change version check.
