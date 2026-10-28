@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: `/repo` added to the Hermes bot Telegram menu: pick a repository (4 most recent as buttons, or `/repo <name>`), Hermes clones it into `~/workspaces` and remembers it as the current repo. Current repo: `<repo>`. Pushes to `main` are discouraged by the skill but not blocked. Hermes's GitHub token expires 2026-11-27. See the [Hermes runbook](../docs/hermes-runbook.md).
+
 2026-10-28: `/sysupgrade` added to the Hermes bot Telegram menu as a Hermes skill (check, report, apply after "apply"). `/upgrade` itself is reserved by Hermes. No tunnel or second bot is needed: the gateway polls Telegram. See the [Hermes runbook](../docs/hermes-runbook.md).
 
 2026-10-28: the owner reported the QNAP backup-share Recycle Bin is off; no independent QTS check was made. Proxmox read-only inspection showed VMs 100/101/130 running, the firewall enabled, SSD SMART health passed with zero media errors, 2% used and 67 lifetime unsafe shutdowns; 39 error-log entries include an `Invalid Field in Command` entry. No NIC-hang messages matched the last 24-hour query. Actual host and VM MACs were added to ignored inventory; the owner confirmed all three host/dev/home-services IP reservations are listed, but their MAC matches remain independently unverified. The owner confirms no UPS; Dell BIOS AC Recovery reports `On`, but a physical power-loss test has not been performed.

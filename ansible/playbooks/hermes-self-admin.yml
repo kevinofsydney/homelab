@@ -48,10 +48,24 @@
         directory_mode: '0755'
         force: false
 
-    # The Telegram menu holds 60 commands and core commands fill it, so pin the skill first.
-    - name: Pin /sysupgrade at the top of the Telegram command menu
+    # /repo in Telegram switches the repository Hermes works on.
+    - name: Seed the repo skill
+      ansible.builtin.copy:
+        src: "../../config/hermes/skills/repo/{{ item.path }}"
+        dest: "/home/hermes/.hermes/skills/software-development/repo/{{ item.path }}"
+        owner: hermes
+        group: hermes
+        mode: "{{ item.mode }}"
+        directory_mode: '0755'
+        force: false
+      loop:
+        - {path: SKILL.md, mode: '0644'}
+        - {path: scripts/list-repos.py, mode: '0755'}
+
+    # The Telegram menu holds 60 commands and core commands fill it, so pin the skills first.
+    - name: Pin /repo and /sysupgrade at the top of the Telegram command menu
       ansible.builtin.command:
-        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['sysupgrade'] | to_json | quote }}"]
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['repo', 'sysupgrade'] | to_json | quote }}"]
       changed_when: false
       when: not ansible_check_mode
 
