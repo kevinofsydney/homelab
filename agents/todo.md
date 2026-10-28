@@ -21,7 +21,7 @@ Rules for maintaining this file:
 | 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | `codex sandbox` fails with EPERM for every command, so codex currently runs unconfined as `coder`; fixing it would restore `workspace-write` | No — guest-local diagnosis | ~1 h | Open; worked around |
-| 14 | Add DeepSeek Harness to the pinned CLI installer | `dsh` 0.2.1-rc.2 was installed by hand; the manifest and installer cover Node, Codex and OpenCode only, so a rebuild would silently omit it | No — repo change, `bash -n` and tests | 30 min | Open; installed manually |
+| 14 | Add DeepSeek Harness to the pinned CLI installer | A rebuilt dev VM must retain the manually installed `dsh` | No — repo change, `bash -n` and tests | 30 min | Source and guest check completed; deployment verification pending |
 
 ## Detail
 
@@ -80,7 +80,7 @@ Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) 
 
 ### 14. DeepSeek Harness in the pinned installer
 
-- `dsh` 0.2.1-rc.2 was installed by hand under `coder` on the dev VM (2026-10-28, see [coder capabilities](../docs/dev-vm-coder-capabilities.md)). `config/ai-cli-versions.json` and `scripts/install-ai-cli.sh` cover only Node, Codex and OpenCode.
+- `dsh` 0.2.1-rc.2 is installed under `coder`. The installer and manifest now pin its top-level tarball SHA-512; an isolated install succeeded and the new read-only `--check` matched the live VM versions and launchers. The installer update still needs to be merged and installed on the guest. Transitive npm dependencies are not individually pinned by this checksum.
 - Done when: the manifest pins `dsh` with a reviewed checksum, the installer installs it, `bash -n` and the tests pass, and a check run on the dev VM reports no change.
 
 ## Closed

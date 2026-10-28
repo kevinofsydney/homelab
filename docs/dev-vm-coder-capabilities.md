@@ -56,7 +56,7 @@ General `sudo` remains denied. `coder` still cannot install arbitrary software, 
 - npm 11 gated the install scripts. `node-pty` needs `npm install-scripts approve node-pty` and then provides `node_modules/node-pty/prebuilds/linux-x64/pty.node`; the same is needed for `@deepseek-ai/dsh-subprocess-local`, whose `ensure-spawn-helper` postinstall materialises the spawn helper. Without those two approvals the agent can boot but cannot run subprocesses or open a terminal.
 - `build-essential` was installed to make a source build possible; the prebuilt `node-pty` binary means it was not needed for this package, and it remains available for future native modules.
 - Not configured: any model credential. `dsh` will need a DeepSeek (or other provider) key in `~/.dsh/.credentials.yaml`, which is an operator action.
-- The pinned installer (`config/ai-cli-versions.json` plus `scripts/install-ai-cli.sh`) does **not** cover `dsh` yet; that is open item 10 in [open work](../agents/todo.md), so a rebuilt host would silently lack it.
+- The pinned installer (`config/ai-cli-versions.json` plus `scripts/install-ai-cli.sh`) now covers `dsh` with a verified top-level tarball SHA-512. Its read-only `--check` verifies installed package versions and launchers, but does not hash installed contents or pin transitive dependencies.
 
 ## Risks this creates
 

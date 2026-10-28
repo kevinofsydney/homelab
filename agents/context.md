@@ -26,6 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: added DeepSeek Harness 0.2.1-rc.2 and the top-level npm tarball SHA-512 to the CLI installer. The tarball digest matched npm registry integrity; installation in an isolated `.local` prefix and `dsh --version` succeeded. The new read-only `--check` was run against the dev VM and found the Node/Codex/OpenCode/DSH versions and launchers match without changes. Installed package contents and transitive dependencies are not independently pinned by this check. Installer deployment and PR review remain pending.
+
+
 2026-10-28: owner wants to approve every Hermes pull request from Telegram. The `pr-gate` plugin blocks opening or merging a PR until the owner's latest message starts with "approve"; verified live (blocked without approval, opened with it). See the [Hermes runbook](../docs/hermes-runbook.md).
 
 2026-10-28: owner decision that Hermes administers its own VM. Hermes now has passwordless sudo on VM 101, runs commands on the VM instead of in a Docker sandbox, and has approval prompts off (force-push and branch-delete denies kept). The Proxmox firewall wall to the home network is unchanged. Snapshot `pre-hermes-sudo-20261028` was taken first. See the [Hermes runbook](../docs/hermes-runbook.md).
