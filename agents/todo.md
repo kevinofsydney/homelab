@@ -19,7 +19,7 @@ Rules for maintaining this file:
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Never performed, on a host with two unclean shutdowns | Read-only inspection; changes need approval | ~30 min at the machine | Not started |
 | 7 | dev VM package leftovers after the 26.04 upgrade | Cosmetic; avoids confusing later audits | Guest change; low risk | 10 min | Not started |
-| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | In progress 2026-10-28 |
+| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Running; owner chat verified. Non-owner and group-add tests pending |
 | 9 | Close Hermes sandbox access to its own VM's SSH | A sandbox reached VM 101's LAN address on TCP 22; the traffic stays in the guest so the Proxmox firewall cannot see it | Yes — guest firewall rule | ~20 min | Not started |
 | 10 | Hermes GitHub App and pull-request flow | Lets Hermes change repositories without being able to merge or touch `main` | Yes — App creation and credential | ~1 h | Not started |
 | 11 | Hermes n8n MCP connection | Lets Hermes inspect, edit, test and publish n8n workflows | Yes — MCP token | ~45 min | Not started |

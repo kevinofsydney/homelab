@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: the Hermes Telegram gateway is live on VM 101 as the `hermes` user service `hermes-gateway.service`, enabled at boot. `the Hermes bot` has groups disabled (`can_join_groups: False`) and only the owner's ID allowed; the owner chatted with it from a private chat and it used the sandbox and memory. The owner's "Always" approval added `script execution via -e/-c flag` to `command_allowlist`. Non-owner and reboot tests are pending. See [credential setup](../docs/hermes-credential-setup.md).
+
 2026-10-28: the owner dropped the n8n scope restriction: Hermes may work on **all** n8n workflows, not only `UFC | `. The Hermes plan, permissions and handoff were updated. Remaining Hermes work (Telegram gateway, sandbox self-SSH gap, GitHub App, n8n MCP, reboot recovery) is now tracked as actions 8–12 in [open work](todo.md).
 
 2026-10-28: Hermes on VM 101 now has a working model and web search. The owner loaded an Exa key and an OpenRouter key (verified `limit 10`, monthly reset, unused) through `hermes-secret`; the model is `deepseek/deepseek-v4.1-flash-1017` via OpenRouter. One-shot tests returned the exact requested reply and a correct Exa `web_search` result. The Telegram gateway is still stopped; GitHub and n8n credentials are not configured. Evidence in the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).

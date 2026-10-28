@@ -32,3 +32,12 @@ A further offline test constructed the pinned `GatewayRunner` without adapters o
 ### Chat filter follow-up
 
 The pinned Telegram adapter applies `allowed_chats` inside its group-message trigger path; its callback authorization handler uses a separate path. The standalone `scripts/hermes/audit-telegram-chat-filter.py` uses a synthetic owner and an allowed-chat list containing only that owner, then exercises the bare adapter's environment-only callback fallback with a synthetic group chat. On the installed version it returned `FAIL` (the callback was accepted). This is another offline fallback test, not proof that this path is reachable in the eventual configured gateway. It does show that testing the group-message filter alone cannot establish callback isolation. Both adapter and runner integration, including configured callbacks, must be tested before activation.
+
+## Telegram gateway activation (2026-10-28)
+
+- The owner disabled **Allow Groups?** for `the Hermes bot` in BotFather and entered a new token with `hermes-secret telegram`. `getMe` returned `username: the Hermes bot`, `can_join_groups: False` (it was `True` until the setting was corrected), no webhook and no pending updates. `TELEGRAM_ALLOWED_USERS` holds the owner ID; `GATEWAY_ALLOW_ALL_USERS` is unset. The token was checked by length only.
+- Keeping the bot out of groups closes the group-callback path found by the offline audits above, at Telegram's side rather than in the pinned adapter.
+- `hermes gateway install --no-start-now --start-on-login` as `hermes` created the user unit `hermes-gateway.service` (`Restart=always`, `RestartSec=5`, enabled under `default.target`; lingering is on, so it starts at boot). Started after the group check; the log showed `Connected to Telegram (polling mode)`, `NRestarts=0`.
+- Owner test from a private chat: the session was recorded with source `telegram` and the owner's user ID. Hermes replied, ran `date` and a weather lookup in the Docker sandbox, and saved a memory entry. A command approval prompt appeared in Telegram; the owner chose **Always**, which added `script execution via -e/-c flag` to `command_allowlist`, so `python3 -c`/`bash -c` style commands no longer prompt.
+- Startup warnings: no host-visible output mount for sandbox file delivery to Telegram; rootless overlay storage cannot enforce per-container disk quotas; auxiliary tasks also use the paid OpenRouter model (within the key's $10 limit).
+- Not yet tested: a message from a non-owner account, an attempt to add the bot to a group, and recovery after a VM reboot.
