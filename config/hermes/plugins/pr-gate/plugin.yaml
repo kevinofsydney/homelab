@@ -1,0 +1,6 @@
+name: pr-gate
+version: "0.1.0"
+description: "Blocks opening or merging a pull request until the owner's latest message starts with 'approve'."
+author: "homelab"
+provides_hooks:
+  - pre_tool_call

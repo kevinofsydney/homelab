@@ -66,3 +66,20 @@
         path: /home/hermes/.hermes/config.yaml
         regexp: '^(approvals:\n(?:[ \t]+.*\n)*?[ \t]+mode:).*$'
         replace: "\\1 'off'"
+
+    # Every pull request needs the owner's go-ahead (owner decision 2026-10-28).
+    - name: Install the pull request gate plugin
+      ansible.builtin.copy:
+        src: "../../config/hermes/plugins/pr-gate/{{ item }}"
+        dest: "/home/hermes/.hermes/plugins/pr-gate/{{ item }}"
+        owner: hermes
+        group: hermes
+        mode: '0644'
+        directory_mode: '0755'
+      loop: [__init__.py, plugin.yaml]
+
+    - name: Enable the pull request gate plugin
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes plugins enable pr-gate"]
+      changed_when: false
+      when: not ansible_check_mode

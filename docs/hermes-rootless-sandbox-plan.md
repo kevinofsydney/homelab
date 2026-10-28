@@ -106,3 +106,10 @@ Owner decision: Hermes must be productive and manage its own VM (packages, Ubunt
 - `/etc/sudoers.d/60-hermes-admin` (NOPASSWD: ALL, `visudo` clean); `terminal.backend: local`, `terminal.cwd: /home/hermes/workspaces`; `approvals.mode: 'off'` (written directly, because `hermes config set` stores `"off"` with its quotes). The 7 deny rules stay, and Hermes's own evals show they apply with approvals off.
 - Git: global config for `hermes` with a credential helper that reads the token from `~/.hermes/.env` (the local backend scrubs Hermes-managed secrets from child environments); `git credential fill` returned a `github_pat_` token.
 - Skill `vm-self-admin` seeded in `~/.hermes/skills/devops/` (editable by Hermes): upgrade freely, run disruptive jobs detached with `systemd-run` because restarting the gateway ends its turn, and ask the owner before a release upgrade so a snapshot can be taken. VM 101 is on Ubuntu 24.04.5.
+
+## Pull request gate (2026-10-28)
+
+Owner decision: Hermes checks in before every pull request, and the owner approves from Telegram. A memory rule alone failed: asked directly to open a PR, Hermes opened scratch PR #3 without asking. Approval prompts are off, and in that mode Hermes's approval gate also auto-approves plugin `approve` escalations, so the gate is a `pre_tool_call` plugin that **blocks** instead, and treats the owner's latest message in the session (from `state.db`, which the model cannot write) starting with "approve" as the go-ahead.
+
+- Detection tested locally on 12 commands (creates, merges, `gh api` fields and Python `requests.post` caught; listing, viewing, file lists and `git push` not caught).
+- Live: asked to open a PR, Hermes was blocked once by the plugin (recorded in `state.db`), opened none and asked for "approve"; a request starting with "approve" opened scratch PR #4. Test PRs #3 and #4 were closed and their branches deleted.

@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-10-28: owner wants to approve every Hermes pull request from Telegram. The `pr-gate` plugin blocks opening or merging a PR until the owner's latest message starts with "approve"; verified live (blocked without approval, opened with it). See the [Hermes runbook](../docs/hermes-runbook.md).
+
 2026-10-28: owner decision that Hermes administers its own VM. Hermes now has passwordless sudo on VM 101, runs commands on the VM instead of in a Docker sandbox, and has approval prompts off (force-push and branch-delete denies kept). The Proxmox firewall wall to the home network is unchanged. Snapshot `pre-hermes-sudo-20261028` was taken first. See the [Hermes runbook](../docs/hermes-runbook.md).
 
 2026-10-28: Hermes skills are now all writable by Hermes. The `n8n-workflows` skill moved from root-owned `/etc/hermes-skills` into `~/.hermes/skills` at the owner's request, after Hermes was refused when recording a lesson. Hermes then added a Switch-node pitfall on its own. See the [Hermes runbook](../docs/hermes-runbook.md).
