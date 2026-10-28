@@ -29,7 +29,7 @@ hermes sessions list
 hermes config get model
 ```
 
-Logs also live in `~/.hermes/logs/` (`gateway.log`, `agent.log`). Lines `inbound message: platform=telegram user=…` show who reached the bot; anything from an unlisted user should be refused there. On 2026-10-28 a second-account test received no reply according to the owner and the gateway logged blocked unauthorized access; the group-add refusal test remains pending.
+Logs also live in `~/.hermes/logs/` (`gateway.log`, `agent.log`). Lines `inbound message: platform=telegram user=…` show who reached the bot; anything from an unlisted user should be refused there. On 2026-10-28 a second-account test received no reply according to the owner and the gateway logged blocked unauthorized access; the owner also reported that Telegram refused to add the bot to a test group; the earlier Bot API inspection reported groups disabled.
 
 From the Proxmox host without SSH into the guest: `qm guest exec 101 -- runuser -l hermes -c "<command>"`.
 

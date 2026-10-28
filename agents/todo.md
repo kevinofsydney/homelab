@@ -13,11 +13,10 @@ Rules for maintaining this file:
 
 | # | Action | Why it matters | Approval needed | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner reports reservations made; MACs recorded, router reservations not independently checked |
+| 2 | DHCP reservations for VM 100, VM 130 and the host | Autostart and the new Proxmox firewall rules both reference addresses; a shuffled lease silently breaks them | Yes — router change | 15 min | Owner confirms all three IP reservations listed; MAC matching not independently checked |
 | 3 | Mitigate the `e1000e` NIC hang on the host | NIC hang preceded the 2026-10-27 outage and can make the host unreachable | Yes — host driver/kernel change | ~30 min + reboot | Temporary offload test passed; persistent mitigation and soak pending |
 | 4 | Paperless NAS-loss and restore test | Last untested failure path in the application stack | Yes — briefly disturbs a running service | ~1 h | Not started |
 | 6 | Hardware health, BIOS and UPS audit | Check hardware and power recovery | Read-only inspection; changes need approval | ~30 min at the machine | Disk and BIOS inspected; no UPS; CPU/RAM diagnostics and physical recovery untested |
-| 8 | Hermes Telegram gateway (owner-only) | The owner's chat interface to Hermes | Yes — bot token and a 24/7 service | ~45 min | Owner chat and non-owner denial verified; group-add test pending |
 | 12 | Fix MagicDNS tailnet-wide (owner console action) | Tailnet device names return NXDOMAIN on Titan even from `tailscale debug resolve`, so `\\<nas>.<tailnet>.ts.net`-style names fail; the NAS access workaround is separate | Yes — owner deletes a split-DNS route in the Tailscale admin console | 5 min | Open; blocked on owner console |
 | 13 | Root-cause the codex/bwrap sandbox failure on the dev VM | Original EPERM is no longer reproducible; workspace-write restored and tested, root cause unknown | No — guest-local diagnosis | ~1 h | Open; root cause unknown |
 
@@ -29,7 +28,7 @@ Autostart ordering and the dev VM's firewall acceptance now depend on fixed addr
 
 - Done when: each device holds a reservation in the router, MAC addresses are recorded in the ignored site inventory, and a host reboot shows unchanged addresses.
 - 2026-10-27: the owner reported making the reservations. A Proxmox reboot later the same evening kept `.10`, `.124` and `.232`. The MACs (host `nic0`, VM 100 and VM 130 `net0`) are readable from `ip -br link` on the host and `qm config`; record them in the ignored inventory to close this. The QNAP address is still unconfirmed by identity.
-- The firewall rules in `proxmox/firewall/` reference these addresses; review them in the same change. On 2026-10-28 the host and all three VM MAC addresses were read from Proxmox and recorded in ignored site inventory. Router reservations are still not independently checked.
+- The firewall rules in `proxmox/firewall/` reference these addresses; review them in the same change. On 2026-10-28 the host and all three VM MAC addresses were read from Proxmox and recorded in ignored site inventory. The owner confirmed on 2026-10-28 that all three addresses are listed as router reservations. Matching the listed MAC addresses to the observed inventory has not been independently verified.
 
 ### 3. `e1000e` NIC hang
 
@@ -55,15 +54,6 @@ Still listed as pending in [shared context](context.md) since the first mileston
 - Done when: CPU/RAM/disk health, BIOS/firmware version and power-loss behaviour are recorded, and the absence or presence of a UPS is documented.
 - 2026-10-28: NVMe SMART overall PASSED; critical warning 0, spare 100%, wear 2%, media/data errors 0, temperature 35 C; 67 lifetime unsafe shutdowns and 39 error-log entries. The latest logged error was an invalid-field command, not proof of disk failure. Dell BIOS 1.11.0 dated 03/08/2023; 31 GiB RAM visible, about 21 GiB available; no failed systemd units. All three VMs have `onboot=1`. The owner confirmed there is no UPS. The read-only Dell firmware attribute `AcPwrRcvry/current_value` reported `On` (possible values `Off;On;Last`), so the BIOS is configured to power on after AC is restored; an actual power-loss recovery has not been tested. OS-level checks are not a full CPU/RAM diagnostic.
 
-### 8. Hermes Telegram gateway
-
-Model (`deepseek/deepseek-v4.1-flash-1017` via OpenRouter, $10/month key limit) and Exa web search already work on VM 101; see the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md).
-
-- Telegram-side guard: disable **Allow Groups** for the bot in BotFather. The pinned gateway applies `TELEGRAM_ALLOWED_USERS` to groups too, and an offline audit accepted an owner callback from a group (see [credential setup](../docs/hermes-credential-setup.md)); keeping the bot out of groups removes that path.
-- The owner revokes the old token, enters the new one with `hermes-secret telegram`; `TELEGRAM_ALLOWED_USERS` already holds the owner ID. Never set `GATEWAY_ALLOW_ALL_USERS`.
-- Done when: the gateway runs as a supervised service that survives a restart; Telegram `getMe` matches the intended bot; the owner gets a reply in a private chat; a message from another account gets no reply and is logged as unauthorised; adding the bot to a group is refused.
-- 2026-10-28: the owner sent a test from a second Telegram account and reported no reply. Gateway journal warnings at 07:26 UTC recorded blocked unauthorized users; IDs were not retained in this repository. Group-add refusal still needs a live test.
-
 ### 13. codex sandbox failure on the dev VM
 
 The previously observed EPERM is not currently reproducible, so its underlying cause is still unknown. On 2026-10-28, `/usr/bin/bwrap` was 0.11.1 and the AppArmor user-namespace restriction remained enabled. Both the PATH-selected Codex 0.165.0 and the pinned-prefix Codex 0.164.0 succeeded with `codex sandbox -- /bin/true`. With an explicit workspace-write policy, both allowed a write inside a disposable workspace and denied a write outside it.
@@ -76,6 +66,7 @@ Recorded here so a fresh agent does not redo them. Dates are the day the work wa
 
 | Item | Evidence |
 | --- | --- |
+| Hermes Telegram gateway access tests | Owner chat and reboot recovery previously verified; on 2026-10-28 the owner reported a second account received no reply and the gateway journal recorded unauthorized-user blocks. The owner also reported Telegram refused to add the bot to a test group; earlier Bot API `getMe` reported `can_join_groups: false`. |
 | dev VM package leftovers | On 2026-10-28 the obsolete duplicate cloud-init logrotate conffile was backed up, logrotate succeeded, and `systemctl is-system-running` returned `running`. Five obsolete package configurations and the stale upgrade marker were removed after backup. `python3.12-venv` is deliberately retained in `rc` state because its purge script removes shared Python wheel paths potentially used by newer Python installations. |
 | DeepSeek Harness in the pinned installer | PR #63 pinned dsh 0.2.1-rc.2 and the top-level tarball SHA-512; isolated install and `dsh --version` succeeded. The updated guest installer matched the merged source SHA-256, and its read-only check matched installed versions and launchers. Installed contents and transitive dependencies are not independently hashed. |
 | Hermes GitHub access | Fine-grained PAT on all repositories (owner decision; App judged overkill; branch protection unavailable on the free plan). In private scratch repo `hermes-sandbox-test`: Hermes cloned, committed, pushed a branch and opened a PR; force-push to `main` blocked by the deny rule; workflow-file push rejected by GitHub; no token in logs (2026-10-28). See the [sandbox plan](../docs/hermes-rootless-sandbox-plan.md) |
