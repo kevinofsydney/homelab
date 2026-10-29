@@ -20,5 +20,10 @@
     "server": "REPLACE_NAS_HOST",
     "nfs_export": "REPLACE_NFS_EXPORT",
     "mountpoint": "/mnt/qnap-backups"
+  },
+  "telegram": {
+    "hermes_bot": "REPLACE_HERMES_BOT_USERNAME",
+    "alerts_bot": "REPLACE_ALERTS_BOT_USERNAME",
+    "ufc_bot": "REPLACE_UFC_BOT_USERNAME"
   }
 }

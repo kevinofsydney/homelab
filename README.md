@@ -46,4 +46,4 @@ See the [topology and resource diagram](docs/homelab-diagram.md) for current all
 
 ## Boundaries
 
-No secrets in Git. Production deployment, firewall/network changes, NAS share creation, hypervisor operations and software installed with elevated privileges require explicit review and approval. No QNAP Plex changes, public ingress or public web app user launch is included.
+No secrets in Git. Production deployment, firewall/network changes, NAS share creation, hypervisor operations and software installed with elevated privileges require explicit review and approval. No QNAP Plex changes or public ingress is included.

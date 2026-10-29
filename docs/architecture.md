@@ -18,4 +18,4 @@ The interactive development VM is for a trusted operator only. It is not the una
 
 ## Deferred components
 
-Paperless is the first Compose stack. Immich, n8n, Audiobookshelf, ebook server, monitoring, Telegram/Hermes, the UFC agent ([rebuild handoff](../agents/handoffs/ufc-hermes-rebuild.md)) and Cloudflare Tunnel need separate release review and service-specific runbooks before activation. Paperless-AI remains optional. The public web app app is a distinct project and requires confirmed the accounting system export format, billing rules and public security testing. NextDNS and QNAP Plex stay as they are. BinaryLane is out of scope.
+Paperless is the first Compose stack. Immich, n8n, Audiobookshelf, ebook server, monitoring, Telegram/Hermes, the UFC agent ([rebuild handoff](../agents/handoffs/ufc-hermes-rebuild.md)) and Cloudflare Tunnel need separate release review and service-specific runbooks before activation. Paperless-AI remains optional. Any public web app is a distinct project and requires its own requirements review and public security testing. NextDNS and QNAP Plex stay as they are. BinaryLane is out of scope.

@@ -56,7 +56,7 @@ Stored in `/home/hermes/.hermes/.env` (owner `hermes`, mode 600), entered only t
 
 | `hermes-secret` name | Variable | Limits | Revoke at |
 | --- | --- | --- | --- |
-| `telegram` | `TELEGRAM_BOT_TOKEN` | Bot `the Hermes bot`, groups disabled | BotFather → API Token → Revoke |
+| `telegram` | `TELEGRAM_BOT_TOKEN` | The Hermes bot (`telegram.hermes_bot` in ignored `config/site.json`), groups disabled | BotFather → API Token → Revoke |
 | `owner` | `TELEGRAM_ALLOWED_USERS` | Owner's numeric ID only (not secret) | Edit with `--replace` |
 | `openrouter` | `OPENROUTER_API_KEY` | $10/month key limit | openrouter.ai → Keys |
 | `exa` | `EXA_API_KEY` | Exa account limits | dashboard.exa.ai → API keys |

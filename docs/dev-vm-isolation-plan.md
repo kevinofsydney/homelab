@@ -49,7 +49,7 @@ Run from the dev VM as `coder` (and repeat one as guest root to show it makes no
 
 | Expect blocked | Expect allowed |
 | --- | --- |
-| Proxmox `<lan-host>` TCP 22, 8006 | DNS lookup through the router (`getent hosts github.com`) |
+| Proxmox host TCP 22, 8006 | DNS lookup through the router (`getent hosts github.com`) |
 | Proxmox IPv6 link-local TCP 22 | `curl -sI https://github.com` and an Ubuntu archive URL |
 | QNAP TCP 22, 443, 445, 2049 | Operator SSH into the dev VM (new session) |
 | Router TCP 80, 443 | DHCP lease renewal (check after the next renewal, or `networkctl renew eth0`) |

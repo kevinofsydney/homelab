@@ -1,7 +1,7 @@
 # Task: rebuild Hermes and the UFC agent on the homelab after the VPS loss
 
 Updated: 2026-10-28
-Status: **Hermes rebuilt and live on VM 101** (see the [Hermes runbook](../../docs/hermes-runbook.md)); several requirements below were revised by owner decisions recorded there. The custom UFC agent (`the UFC bot`) is **not built** and proceeds only if the owner asks. Backups now exist. The n8n fight-card outage is resolved in cloud n8n (see below).
+Status: **Hermes rebuilt and live on VM 101** (see the [Hermes runbook](../../docs/hermes-runbook.md)); several requirements below were revised by owner decisions recorded there. The custom UFC agent is **not built** and proceeds only if the owner asks. Backups now exist. The n8n fight-card outage is resolved in cloud n8n (see below).
 Branch or worktree: none yet; this document is the plan
 Base/current commit: verify with `git log -1` before acting
 PR: none for the build itself
@@ -86,7 +86,7 @@ Proposed next step (not built): stage 2 of a self-healing design. A read-only n8
 
 ## UFC workflow inventory (reference, not an allowlist)
 
-n8n project `<n8n-project-id>`, UFC folder `<n8n-folder-id>`. IDs as of 2026-10-27; search for `UFC | ` for the current set. Temporary `TMP | …` test workflows were archived.
+n8n project and UFC folder IDs are in ignored `config/site.json` (`observed.n8n_project_id`, `observed.n8n_ufc_folder_id`). IDs as of 2026-10-27; search for `UFC | ` for the current set. Temporary `TMP | …` test workflows were archived.
 
 | Workflow | ID |
 | --- | --- |
@@ -117,8 +117,8 @@ All old values were on the destroyed disk; treat them as exposed. The operator c
 
 | Name | Guest | Notes |
 | --- | --- | --- |
-| UFC bot Telegram token (`the UFC bot`) | ufc-agent | BotFather → Revoke current token |
-| Hermes Telegram token (`the Hermes bot`) | hermes | BotFather → Revoke current token |
+| UFC bot Telegram token | ufc-agent | BotFather → Revoke current token |
+| Hermes Telegram token | hermes | BotFather → Revoke current token |
 | OpenRouter key (UFC) | ufc-agent | Old key revoked 2026-10-27; new key with US$5/month provider limit |
 | OpenRouter key (Hermes) | hermes | Old key revoked 2026-10-27; new key with US$10 limit |
 | OpenCode Go key(s) | both | Old key revoked by the operator on 2026-10-27; create new key(s) with Extra usage disabled |

@@ -4,7 +4,7 @@ Status: initial development bootstrap approved and executed on 2026-10-27; later
 
 ## Blueprint review boundary
 
-The operator supplied the original [blueprint](homelab-blueprint.md), dated 2026-10-26, on 2026-10-27. It is preserved unchanged as a design reference and has now been reviewed in full against the repository. Embedded checklists and commands are proposed work, not authorization to execute infrastructure changes. Current root `AGENTS.md` and explicit operator instructions govern execution.
+The operator supplied the original [blueprint](homelab-blueprint.md), dated 2026-10-26, on 2026-10-27. It is preserved as a design reference (lightly generalised on 2026-10-29 before the repository was made public) and has now been reviewed in full against the repository. Embedded checklists and commands are proposed work, not authorization to execute infrastructure changes. Current root `AGENTS.md` and explicit operator instructions govern execution.
 
 ## Blueprint reconciliation
 
@@ -19,8 +19,8 @@ The operator supplied the original [blueprint](homelab-blueprint.md), dated 2026
 | Grok GitHub connector or public MCP/webhook | Optional later integrations. Verify current upstream capabilities before implementation. Prefer issue creation through narrow permissions; public endpoints require separate ingress/security review and explicit approval |
 | Paperless built-in AI and external Paperless-AI status | Time-sensitive claims in the source document have not been independently verified in this review. Check official release documentation and upstream maintenance status before selecting features. Keep cloud AI disabled pending document privacy choices |
 | Immich, n8n, Audiobookshelf/Kavita | Intended media candidates clarified; final selection and release-compatible stacks remain pending. Use the reusable service contract rather than inventing deployable image sets or exports |
-| Public web app production | Preserve managed-hosting preference; hosting, the accounting system edition/import schema, billing rules and privacy/recovery requirements remain undecided. Use synthetic data until approved for users use |
-| QNAP-first backups | Initial staging target only. Verify an isolated restore and add independent encrypted backups before relying on it for irreplaceable/public data; retention changes require approval |
+| Public web app production | Preserve managed-hosting preference; hosting, integration formats and privacy/recovery requirements remain undecided. Use synthetic data until approved for real use |
+| QNAP-first backups | Initial staging target only. Verify an isolated restore and add independent encrypted backups before relying on it for irreplaceable data; retention changes require approval |
 | Update reports and optional Pi-hole/local models | Report-only checks can be prepared later; no scheduled jobs or broad automatic upgrades are enabled. Retain NextDNS and defer optional DNS/inference changes |
 
 All blueprint sections, including phase acceptance checklists, suggested structure, unresolved facts and documentation links, were reviewed. External URLs are reference leads, not verified current product guarantees. Source validation does not satisfy the blueprint's live backup, isolation or application acceptance tests.

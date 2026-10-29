@@ -7,7 +7,7 @@
 - AI CLIs: run only as `coder`, a non-sudo account with no direct SSH login. `devops` is the SSH administration account; it can switch to `coder`, but agents cannot switch back. Sign in interactively through supported login. No copied browser cookies or session tokens. Treat the CLI's shell permission as full access to `coder`. Keep production credentials absent from that user.
 - API spend: use provider spending limits, per-job budgets/timeouts and low-privilege keys; do not run unattended tasks on an unrestricted key.
 - Paperless: bind only to the chosen Tailscale address. Keep DB/broker internal to Compose. Use a strong secret key and database password in `compose/paperless/.env` mode 0600. Sensitive documents stay local by default; cloud model processing requires explicit opt-in.
-- Backups: restrict the dedicated QNAP share, periodically test restores, and keep one encrypted off-NAS copy. Backups may contain user or household data.
+- Backups: restrict the dedicated QNAP share, periodically test restores, and keep one encrypted off-NAS copy. Backups may contain household data.
 
 Production deployment, running-service upgrades, network/firewall changes, elevated installs and credential changes require explicit approval. See `agents/permissions.md`.
 
