@@ -1,0 +1,10 @@
+[Unit]
+Description=Proxmox scheduled package updates
+Wants=network-online.target
+After=network-online.target time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/proxmox-auto-update
+TimeoutStartSec=infinity
+KillMode=process

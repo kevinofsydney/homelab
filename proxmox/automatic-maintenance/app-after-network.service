@@ -1,0 +1,16 @@
+[Unit]
+Description=Recover private application after Tailscale is ready
+Wants=network-online.target docker.service tailscaled.service
+After=network-online.target docker.service tailscaled.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/homelab-private-app-start
+ExecStart=/usr/local/sbin/homelab-private-app-start
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

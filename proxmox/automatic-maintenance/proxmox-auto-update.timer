@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Proxmox maintenance in Sydney time
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Australia/Sydney
+AccuracySec=1min
+Persistent=false
+
+[Install]
+WantedBy=timers.target
