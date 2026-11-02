@@ -1,0 +1,76 @@
+---
+# Gives Hermes the status URL and the /immich skill. Run hermes-egress-guard.yml for the
+# firewall exception. Refuses to run unless the guest is enrolled as described in
+# docs/immich-monitoring.md.
+- name: Give Hermes read-only Immich status access
+  hosts: hermes_agents
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require the reviewed guest and a private status address
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'hermes-agent'
+          - hermes_immich_status_ip is match('^100\\.[0-9]+\\.[0-9]+\\.[0-9]+$')
+
+    - name: Read this guest's Tailscale identity
+      ansible.builtin.command: tailscale status --json --self --peers=false
+      changed_when: false
+      check_mode: false
+      register: hermes_tailscale
+
+    - name: Read this guest's Tailscale preferences
+      ansible.builtin.command: tailscale debug prefs
+      changed_when: false
+      check_mode: false
+      register: hermes_tailscale_prefs
+
+    - name: Require the tag and no DNS, routes, exit node or Tailscale SSH
+      ansible.builtin.assert:
+        that:
+          - "'tag:hermes' in ((hermes_tailscale.stdout | from_json).Self.Tags | default([]))"
+          - not (hermes_tailscale_prefs.stdout | from_json).CorpDNS
+          - not (hermes_tailscale_prefs.stdout | from_json).RouteAll
+          - not (hermes_tailscale_prefs.stdout | from_json).RunSSH
+          - ((hermes_tailscale_prefs.stdout | from_json).ExitNodeID | default('')) == ''
+
+    - name: Create the configuration directory
+      ansible.builtin.file:
+        path: /etc/homelab
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Record the status URL
+      ansible.builtin.copy:
+        content: "http://{{ hermes_immich_status_ip }}:{{ hermes_immich_status_port | default(2284) }}/status\n"
+        dest: /etc/homelab/immich-status-url
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create the skill directory
+      ansible.builtin.file:
+        path: /home/hermes/.hermes/skills/devops/immich
+        state: directory
+        owner: hermes
+        group: hermes
+        mode: '0755'
+
+    # Hermes owns its skills after seeding, so do not overwrite later edits.
+    - name: Seed the /immich skill
+      ansible.builtin.copy:
+        src: ../../config/hermes/skills/immich/SKILL.md
+        dest: /home/hermes/.hermes/skills/devops/immich/SKILL.md
+        owner: hermes
+        group: hermes
+        mode: '0644'
+        force: false
+
+    # The Telegram menu holds 60 commands and core commands fill it, so pin the skills first.
+    - name: Pin /immich near the top of the Telegram command menu
+      ansible.builtin.command:
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['repo', 'sysupgrade', 'immich'] | to_json | quote }}"]
+      changed_when: false
+      when: not ansible_check_mode

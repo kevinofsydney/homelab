@@ -33,6 +33,10 @@ Logs also live in `~/.hermes/logs/` (`gateway.log`, `agent.log`). Lines `inbound
 
 From the Proxmox host without SSH into the guest: `qm guest exec 101 -- runuser -l hermes -c "<command>"`.
 
+## Immich status (prepared, not deployed)
+
+Hermes has no access to Immich today. [Immich monitoring](immich-monitoring.md) describes the proposed read-only `/immich` skill and how to deploy and remove it.
+
 ## Start, stop and restart
 
 ```bash

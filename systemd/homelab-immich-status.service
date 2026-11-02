@@ -1,0 +1,25 @@
+[Unit]
+Description=Serve the sanitized Immich health snapshot on the Tailscale address
+Wants=network-online.target tailscaled.service
+After=network-online.target tailscaled.service
+StartLimitIntervalSec=0
+
+[Service]
+EnvironmentFile=/etc/homelab/immich-status-server.env
+ExecStart=/usr/bin/python3 /opt/homelab/scripts/immich-status-server.py
+# Binding fails until the Tailscale address exists, so keep retrying.
+Restart=always
+RestartSec=30
+DynamicUser=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET
+MemoryMax=64M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

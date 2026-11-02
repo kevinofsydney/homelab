@@ -1,0 +1,61 @@
+---
+# Installs the read-only status path on the Immich VM without starting it.
+# Start it with the steps in docs/immich-monitoring.md after approval.
+- name: Stage the sanitized Immich status service
+  hosts: immich
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require the reviewed guest and a private bind address
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['hostname'] == 'immich'
+          - immich_status_bind_ip is match('^100\\.[0-9]+\\.[0-9]+\\.[0-9]+$')
+
+    - name: Require the deployed Immich configuration
+      ansible.builtin.stat:
+        path: /opt/homelab/compose/immich/.env
+      register: immich_env
+      failed_when: not immich_env.stat.exists
+
+    - name: Create the configuration directory
+      ansible.builtin.file:
+        path: /etc/homelab
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Install reviewed scripts and units
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: '{{ playbook_dir }}/../../scripts/immich-status-collect.py', dest: /opt/homelab/scripts/immich-status-collect.py, mode: '0755'}
+        - {src: '{{ playbook_dir }}/../../scripts/immich-status-server.py', dest: /opt/homelab/scripts/immich-status-server.py, mode: '0755'}
+        - {src: '{{ playbook_dir }}/../../systemd/homelab-immich-status.service', dest: /etc/systemd/system/homelab-immich-status.service, mode: '0644'}
+        - {src: '{{ playbook_dir }}/../../systemd/homelab-immich-status-collect.service', dest: /etc/systemd/system/homelab-immich-status-collect.service, mode: '0644'}
+        - {src: '{{ playbook_dir }}/../../systemd/homelab-immich-status-collect.timer', dest: /etc/systemd/system/homelab-immich-status-collect.timer, mode: '0644'}
+
+    - name: Write the server's bind settings
+      ansible.builtin.copy:
+        content: |
+          IMMICH_STATUS_BIND_IP={{ immich_status_bind_ip }}
+          IMMICH_STATUS_PORT={{ immich_status_port | default(2284) }}
+        dest: /etc/homelab/immich-status-server.env
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Validate the installed units
+      ansible.builtin.command: systemd-analyze verify homelab-immich-status.service homelab-immich-status-collect.service homelab-immich-status-collect.timer
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Reload systemd units
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: not ansible_check_mode
