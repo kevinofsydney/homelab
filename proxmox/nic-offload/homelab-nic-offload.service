@@ -1,0 +1,16 @@
+[Unit]
+Description=Disable TSO, GSO and GRO on nic0 before networking starts
+DefaultDependencies=no
+BindsTo=sys-subsystem-net-devices-nic0.device
+After=sys-subsystem-net-devices-nic0.device local-fs.target
+Before=network-pre.target networking.service shutdown.target
+Wants=network-pre.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/homelab-nic-offload apply
+
+[Install]
+WantedBy=multi-user.target

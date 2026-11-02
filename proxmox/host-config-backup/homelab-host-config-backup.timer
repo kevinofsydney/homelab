@@ -1,0 +1,10 @@
+[Unit]
+Description=Host configuration backup, on the VM backup job's schedule
+
+[Timer]
+OnCalendar=*-*-1/3 02:30
+AccuracySec=1min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

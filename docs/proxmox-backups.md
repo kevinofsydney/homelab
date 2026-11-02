@@ -1,6 +1,6 @@
 # Proxmox VM backups
 
-Status: **deployed and restore-tested 2026-10-28** with the owner's approval. Closes todo action 1.
+Status: **deployed and restore-tested 2026-10-28** with the owner's approval. Closes todo action 1. The host's own configuration is covered separately by the [host configuration backup](../proxmox/host-config-backup/README.md), on the same schedule.
 
 ## What is backed up
 

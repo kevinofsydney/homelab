@@ -1,0 +1,9 @@
+[Unit]
+Description=Archive the Proxmox host configuration to the QNAP
+Wants=network-online.target
+After=network-online.target pve-cluster.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-host-config-backup
+TimeoutStartSec=15min

@@ -1,0 +1,11 @@
+[Unit]
+Description=Roll back the nic0 offload candidate unless acknowledged
+
+[Timer]
+# Relative to timer activation, so arming and every later boot each get the full delay.
+OnActiveSec=30min
+AccuracySec=1min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

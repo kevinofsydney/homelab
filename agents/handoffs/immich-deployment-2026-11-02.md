@@ -1,20 +1,15 @@
-# Immich deployment: interrupted 2026-11-02
+# Immich deployment: 2026-11-02
 
-The owner authorized a dedicated Immich VM, a dedicated QNAP share and private access. This is an incomplete deployment. Site addresses and credentials belong only in ignored inventory or on the guest, never in this handoff.
+The owner authorized a dedicated Immich VM, QNAP share and private access. Site addresses and credentials belong only in ignored inventory or on the guest, never in this handoff.
 
 ## Observed
 
-- VM 120 was cloned from the existing template with 4 vCPU, 8 GiB RAM and an 80 GiB thin disk; autostart was left disabled and it has not been added to the existing VM backup job.
-- The owner made the VM's DHCP reservation; router UI showed the reservation enabled. Tailscale enrollment succeeded under the owner's identity. Docker and the NFS client were installed on the guest.
-- A new QNAP share was created; NFS export listing showed it restricted to the VM's reserved address. The guest mounted that exact export using NFSv4.0, and the configured non-root service identity created a restricted `library` directory there. Existing QNAP shares were not changed.
-- The local SSD directories and private guest `.env` were prepared. The deployment script's plan passed its mount, private address, local filesystem and Compose checks. Starting the pinned images was initiated, but connectivity was lost during downloads; the outcome is unknown. No photos were imported by this deployment.
-- The router and QNAP NFS port remained reachable, whereas connections to the host and VMs failed. This does not establish the cause. The host has a previously recorded NIC issue; diagnose rather than assume.
+- VM 120 has 4 vCPU, 8 GiB RAM and an 80 GiB thin disk. Its reserved address and Tailscale enrollment were confirmed. Proxmox autostart is enabled, and it was added to the existing scheduled VM backup job without changing retention.
+- The dedicated QNAP NFSv4.0 export was restricted to the VM. The guest uses an exact-source mount gate and a separate service identity; originals are under `library` on the share, and the database, thumbnails, encoded video and model cache are on local SSD. The library root is mode 0711 so root-squashed Docker can traverse to the pre-created empty nested mount targets; application data directories remain owned by the service identity. Do not replace root squash with unrestricted root access.
+- After image downloads were interrupted by the documented host NIC hang, the owner's separate NIC mitigation was deployed and the download resumed. All four pinned containers reported healthy, the Tailscale-bound page returned HTTP 200 locally, and a probe to the guest's LAN address failed. External client authorization and mobile upload remain unverified.
+- The NFS automount, gated systemd startup service, and VM autostart were enabled. A guest reboot triggered the exact NFS mount and the gated service successfully started all four containers. A NAS-loss test remains outstanding. Container restart policies are disabled so a Docker restart cannot bypass the gate.
+- An initial snapshot VM backup completed successfully on the existing QNAP backup target, without pruning. The archive passed `zstd -t` and restored to a stopped test VM; a read-only filesystem inspection found the app configuration, startup unit and PostgreSQL data directory. The temporary VM was removed. Database application-level recovery is not yet tested. The VM backup does not contain the NFS photo library. An independent photo backup and an off-NAS copy are still needed before the library should be relied upon. Do not change backup retention without explicit approval.
 
-## Resume safely
+## Continue
 
-1. Restore and verify host/guest connectivity with the owner. Inspect VM state, Docker containers and logs, disk space, mount identity and image pull status before retrying anything. Do not re-create the VM, share, account, private `.env` or library directory.
-2. The mounted export is currently temporary: no persistent automount or Immich systemd unit has been installed. Containers have `restart: no`; a prepared unit exists in `systemd/` but is not evidence of deployment. Verify the exact mount gate and private bind, configure and test controlled boot recovery, then enable VM autostart only after validation.
-3. Include the VM in an appropriate backup job and verify a successful backup and restore. VM backups alone do not back up the NFS photo library. Arrange independently recoverable copies of both database and original photos, including an off-NAS copy, and test recovery. Do not alter backup retention without explicit approval.
-4. Verify all containers, local-only LAN exposure, authorized tailnet access and an identity-specific synthetic upload. Have the owner create the administrator account and use the mobile app only after the backup limitations are understood. Test NAS loss and restart fail-closed behavior before declaring the service reliable.
-
-The Compose configuration and deployment gate are prepared and need live runtime validation. NFS uses the NAS's supported v4.0, not v4.1. The project requires exact source verification before app starts and forbids creating a missing mount point as a fallback destination.
+Confirm administrator setup with the owner and private client access, then test a synthetic upload once backup expectations are clear. Test application-level database recovery, establish a separate independent original-photo backup with the owner, and test NAS-loss behavior. Continue the 24-hour NIC soak; a short clean workload does not prove the mitigation. Existing QNAP shares and Plex were not changed.
