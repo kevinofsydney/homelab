@@ -33,9 +33,9 @@ Logs also live in `~/.hermes/logs/` (`gateway.log`, `agent.log`). Lines `inbound
 
 From the Proxmox host without SSH into the guest: `qm guest exec 101 -- runuser -l hermes -c "<command>"`.
 
-## Immich status (prepared, not deployed)
+## Immich status
 
-Hermes has no access to Immich today. [Immich monitoring](immich-monitoring.md) describes the proposed read-only `/immich` skill and how to deploy and remove it.
+Since 2026-11-02 VM 101 is on the tailnet as `tag:hermes`, and the policy lets it reach only the Immich status endpoint. The `/immich` skill reads it and suggests fixes; it can't change Immich. The egress guard has one exception for that address and port. See [Immich monitoring](immich-monitoring.md) for evidence and rollback: removing the grant cuts access without touching the VM.
 
 ## Start, stop and restart
 

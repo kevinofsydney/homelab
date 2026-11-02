@@ -37,7 +37,7 @@ Host-enforced, outside the agent's control, following the pattern proven on the 
 
 - Deny every private address, including Proxmox management, the NAS, the router and the application VM.
 - ~~Allow only the destinations the agent needs~~: superseded on 2026-10-28 by the owner's open-egress decision (see Decisions). Keep every credential narrow, capped and listed for revocation instead.
-- Do **not** enrol this guest in Tailscale. Telegram long polling needs no inbound path, and a tailnet route would bypass address-based rules. A proposed exception for one read-only destination is prepared but not deployed; see [Immich monitoring](immich-monitoring.md).
+- Do **not** enrol this guest in Tailscale. Telegram long polling needs no inbound path, and a tailnet route would bypass address-based rules. Superseded on 2026-11-02 by the owner: the guest is enrolled as `tag:hermes`, and the tailnet policy allows it one read-only destination; see [Immich monitoring](immich-monitoring.md).
 - Verify from inside the guest and from inside the agent's sandbox, not from a prompt or the agent's own report.
 
 ## Credentials
