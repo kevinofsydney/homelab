@@ -10,7 +10,7 @@ The clone script was run in plan mode before apply and checked an unused VM ID, 
 
 `application-baseline.yml` installed the guest agent and SSH restrictions. `stage-docker.yml` installed pinned Docker Engine/CLI, containerd and Compose packages from Docker's signed Ubuntu repository with package-service starts suppressed. It kept Docker's service and socket stopped and disabled. `stage-n8n.yml` staged the pinned n8n Compose file and a plan-by-default wrapper, with an initially empty local ext4 data directory. No n8n container has been created or started.
 
-The owner subsequently approved and the operator created a dedicated QNAP Paperless NFS export, without changing Plex. Paperless has been deployed and its mount, synthetic ingest and OCR tested; see the [Paperless handoff](../agents/handoffs/paperless-deployment.md). Immich storage remains unprepared. QNAP backups remain out of scope.
+The owner subsequently approved and the operator created a dedicated QNAP Paperless NFS export, without changing Plex. Paperless has been deployed and its mount, synthetic ingest and OCR tested; see the [Paperless handoff](../agents/handoffs/paperless-deployment.md). Immich runs on its own VM with a separate QNAP export; see the [Immich handoff](../agents/handoffs/immich-deployment-2026-11-02.md). QNAP backups remain out of scope.
 
 ## Reviewable Docker activation
 
