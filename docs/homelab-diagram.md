@@ -26,7 +26,7 @@ flowchart TB
         Plex["Existing Plex<br/>NAS LAN address :32400<br/>Shares QNAP CPU / RAM / storage"]
         Docs["Paperless NFS share<br/>NAS LAN address :2049 (NFSv4)<br/>Documents stored on QNAP volume"]
     end
-    Future["Planned: Immich • website • media apps<br/>No service addresses or allocations yet"]
+    Future["Planned: website • media apps<br/>No service addresses or allocations yet"]
     Users --> Router
     Users --> Tailnet
     Users --> PVE
