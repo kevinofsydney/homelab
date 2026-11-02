@@ -26,6 +26,8 @@ class ImmichGateTests(unittest.TestCase):
                 (root / "ssd" / item).mkdir(parents=True)
             (root / "nas").mkdir()
             (root / "nas/library").mkdir()
+            for item in ("thumbs", "encoded-video"):
+                (root / "nas/library" / item).mkdir()
             (root / "compose/immich/.env").write_text(
                 f"IMMICH_NAS_ROOT={root / 'nas'}\nIMMICH_NAS_SOURCE=nas:/photos\n"
                 f"IMMICH_LOCAL_ROOT={root / 'ssd'}\nIMMICH_BIND_IP=100.81.1.2\n"

@@ -15,6 +15,9 @@ done < "$envfile"
 [[ "${DB_PASSWORD:-}" =~ ^[A-Za-z0-9]+$ ]] || { echo 'DB_PASSWORD must be alphanumeric' >&2; exit 2; }
 "$repo/scripts/check-mount.sh" "$IMMICH_NAS_ROOT" "${IMMICH_NAS_SOURCE:?Set expected NFS source}"
 [[ -d "$IMMICH_NAS_ROOT/library" && ! -L "$IMMICH_NAS_ROOT/library" ]] || { echo 'Missing or unsafe NAS library directory' >&2; exit 1; }
+for target in thumbs encoded-video; do
+  [[ -d "$IMMICH_NAS_ROOT/library/$target" && ! -L "$IMMICH_NAS_ROOT/library/$target" ]] || { echo "Missing or unsafe NAS mount target: $target" >&2; exit 1; }
+done
 python3 - "$IMMICH_BIND_IP" <<'PY'
 import ipaddress, json, subprocess, sys
 try:
