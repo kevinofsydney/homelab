@@ -1,12 +1,12 @@
 # Proxmox e1000e hang: proposed mitigation
 
-Status: **prepared, not deployed**. The service, rollback timer and commands are in [`proxmox/nic-offload`](../proxmox/nic-offload/README.md). A prior short, temporary test of disabling TSO, GSO and GRO succeeded and was rolled back; it did not prove that the intermittent hang was fixed. See [the todo](../agents/todo.md) for evidence and acceptance criteria.
+Status: **deployed 2026-11-02, soak pending**. The service, rollback timer and commands are in [`proxmox/nic-offload`](../proxmox/nic-offload/README.md). The fix is not proven until the soak below passes. See [the todo](../agents/todo.md) for evidence and acceptance criteria.
 
 ## Scope and prerequisites
 
 The candidate changes only the `nic0` TSO, GSO and GRO settings. The currently observed baseline for all three is `on`. EEE, address configuration, bridges and firewall rules stay unchanged. This is a hypothesis, not a known root-cause fix. Reconfirm interface identity and current baseline before applying; do not blindly restore `on` if the baseline has changed.
 
-Before a production change, confirm the owner's local-console access, current VM backups and the current **host** backup required by [maintenance](maintenance.md). Existing VM backups are not evidence of a full Proxmox host backup. Confirm no backup or other critical operation is underway. Capture current NIC settings, service health, VM status and boot identifiers; record a rollback path accessible from the physical console.
+Before a production change, confirm the owner's local-console access, current VM backups and the current **host** backup required by [maintenance](maintenance.md). Existing VM backups are not evidence of a full Proxmox host backup; the [host configuration backup](../proxmox/host-config-backup/README.md) covers the host's configuration. Confirm no backup or other critical operation is underway. Capture current NIC settings, service health, VM status and boot identifiers; record a rollback path accessible from the physical console.
 
 ## Proposed application and recovery
 
