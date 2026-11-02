@@ -1,0 +1,56 @@
+name: immich
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3.3.5@sha256:485d546a2e31d6a8b4db8423fcba5c109de8c218d93410af115fd1ccfc4352a6
+    user: "${IMMICH_UID:?Set verified UID}:${IMMICH_GID:?Set verified GID}"
+    restart: "no"
+    env_file: [.env]
+    ports:
+      - "${IMMICH_BIND_IP:?Set Tailscale address}:2283:2283"
+    volumes:
+      - type: bind
+        source: ${IMMICH_NAS_ROOT:?Set mounted NAS path}/library
+        target: /data
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${IMMICH_LOCAL_ROOT:?Set local SSD path}/thumbs
+        target: /data/thumbs
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${IMMICH_LOCAL_ROOT}/encoded-video
+        target: /data/encoded-video
+        bind: {create_host_path: false}
+      - /etc/localtime:/etc/localtime:ro
+    depends_on: [redis, database]
+    healthcheck: {disable: false}
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5@sha256:5b28c9352c8374b8a1ed96fbdd8d6755fea6e43510ec43fdf6538aa02ea40f56
+    user: "${IMMICH_UID}:${IMMICH_GID}"
+    restart: "no"
+    env_file: [.env]
+    volumes:
+      - type: bind
+        source: ${IMMICH_LOCAL_ROOT}/model-cache
+        target: /cache
+        bind: {create_host_path: false}
+    healthcheck: {disable: false}
+  redis:
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG || exit 1"]
+  database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    restart: "no"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set database password}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_DB: ${DB_DATABASE_NAME:-immich}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - type: bind
+        source: ${IMMICH_LOCAL_ROOT}/postgres
+        target: /var/lib/postgresql/data
+        bind: {create_host_path: false}
+    shm_size: 128mb
+    healthcheck: {disable: false}
