@@ -63,9 +63,9 @@
         - {path: scripts/list-repos.py, mode: '0755'}
 
     # The Telegram menu holds 60 commands and core commands fill it, so pin the skills first.
-    - name: Pin /repo and /sysupgrade at the top of the Telegram command menu
+    - name: Pin /repo, /sysupgrade and /immich at the top of the Telegram command menu
       ansible.builtin.command:
-        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['repo', 'sysupgrade'] | to_json | quote }}"]
+        argv: [/usr/sbin/runuser, -l, hermes, -c, "hermes config set platforms.telegram.extra.command_menu.priority {{ ['repo', 'sysupgrade', 'immich'] | to_json | quote }}"]
       changed_when: false
       when: not ansible_check_mode
 

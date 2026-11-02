@@ -22,6 +22,7 @@ Rules for maintaining this file:
 | 15 | Renew Hermes's GitHub token before 2026-11-27 | Hermes loses clone, push and PR access when the fine-grained token expires | Owner creates the token and enters it | 10 min | Not started |
 | 16 | Delete VM 101 snapshot `pre-hermes-sudo-20261028` | It is the rollback point for the sudo change; a lingering snapshot grows and pins old disk state | Yes, owner decides when | 2 min | Keep until Hermes self-administration has run cleanly for a few days |
 | 17 | Owner-side Telegram check of `/repo` and `/sysupgrade` | Both were verified through `getMyCommands` and `hermes chat -q`, not by tapping in Telegram | No | 5 min | Not started |
+| 18 | Deploy Immich monitoring and Hermes triage | Hermes can't reach Immich, and no alert exists for an Immich outage | Yes, changes VM 101, the Immich VM, the tailnet policy and Kuma; owner console actions | ~1 h | Prepared in [Immich monitoring](../docs/immich-monitoring.md), not deployed |
 
 ## Detail
 

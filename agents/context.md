@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-11-02: the owner asked for Hermes to monitor and triage Immich. A read-only status path, a narrow `tag:hermes` tailnet grant, an `/immich` skill and Uptime Kuma alerts are prepared in [Immich monitoring](../docs/immich-monitoring.md). None of it is deployed: Hermes still can't reach Immich, and enrolling VM 101 in Tailscale needs the owner's approval and console actions (todo 18).
+
 2026-11-02: the Proxmox host kernel was updated for CVE-2026-98432; Ubuntu guests were awaiting vendor fixes and a startup-ordering fix is still needed for one private app. See the [maintenance handoff](handoffs/cve-2026-98432-maintenance-2026-11-02.md).
 
 2026-11-02: the owner authorized an isolated Immich VM and private NAS share. The deployment was interrupted by a host network hang, then resumed after mitigation. It is now running, and the owner reports creating the administrator account and that the mobile app works. Decision (confirmed by the owner, 2026-11-02): defer an independent Immich photo backup because the photos are also in Google Photos and iCloud; revisit if Immich becomes the only copy of any photos. Read the [Immich handoff](handoffs/immich-deployment-2026-11-02.md) for current state and remaining backup and recovery checks.

@@ -1,0 +1,11 @@
+[Unit]
+Description=Write the sanitized Immich health snapshot
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/homelab/scripts/immich-status-collect.py
+RuntimeDirectory=immich-status
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+TimeoutStartSec=90
+NoNewPrivileges=yes

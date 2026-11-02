@@ -19,8 +19,8 @@
       check_mode: false
 
     - name: Install the nftables table
-      ansible.builtin.copy:
-        src: ../../config/hermes/hermes-egress.nft
+      ansible.builtin.template:
+        src: ../../config/hermes/hermes-egress.nft.j2
         dest: /etc/hermes-egress.nft
         owner: root
         group: root
