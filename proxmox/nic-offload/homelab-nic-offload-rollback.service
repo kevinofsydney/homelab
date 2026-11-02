@@ -1,0 +1,6 @@
+[Unit]
+Description=Restore the recorded nic0 offload settings and disable the candidate
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-nic-offload rollback

@@ -28,6 +28,9 @@ jobs:
           .local/venv/bin/python -m unittest discover -s tests -v
           .local/venv/bin/python scripts/validate_repo.py
           for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Test NIC offload safeguards
+        working-directory: proxmox/nic-offload
+        run: python3 test_nic_offload.py
       - name: Test scheduled maintenance safeguards
         working-directory: proxmox/automatic-maintenance
         run: python3 test_auto_update.py

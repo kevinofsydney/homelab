@@ -1,6 +1,6 @@
 # Proxmox e1000e hang: proposed mitigation
 
-Status: **not deployed**. A prior short, temporary test of disabling TSO, GSO and GRO succeeded and was rolled back; it did not prove that the intermittent hang was fixed. See [the todo](../agents/todo.md) for evidence and acceptance criteria.
+Status: **prepared, not deployed**. The service, rollback timer and commands are in [`proxmox/nic-offload`](../proxmox/nic-offload/README.md). A prior short, temporary test of disabling TSO, GSO and GRO succeeded and was rolled back; it did not prove that the intermittent hang was fixed. See [the todo](../agents/todo.md) for evidence and acceptance criteria.
 
 ## Scope and prerequisites
 
@@ -16,4 +16,4 @@ On initial application, arm the rollback, apply the settings, verify fresh SSH a
 
 ## Acceptance
 
-After the reboot, verify the desired settings persist and observe representative VM and QNAP traffic for a defined period, proposed as 24 hours. Check the host journal for new `Detected Hardware Unit Hang` events and inspect interface error counters. A clean short test or a single reboot does not prove the intermittent failure cannot recur. Keep the todo open until the defined soak completes, or the owner explicitly accepts the remaining risk. If errors or service regressions occur, restore the original settings and investigate firmware or kernel alternatives separately.
+After the reboot, verify the desired settings persist and observe representative VM and QNAP traffic for a defined period, proposed as 24 hours. That traffic must include a sustained container image download on a guest, the activity during which the 2026-11-02 hang began, because the fault can stay quiet for days under light use. Check the host journal for new `Detected Hardware Unit Hang` events and inspect interface error counters. A clean short test or a single reboot does not prove the intermittent failure cannot recur. Keep the todo open until the defined soak completes, or the owner explicitly accepts the remaining risk. If errors or service regressions occur, restore the original settings and investigate firmware or kernel alternatives separately.
