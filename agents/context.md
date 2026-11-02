@@ -26,7 +26,9 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
-2026-11-02: the `e1000e` hang recurred on the patched kernel during Immich image downloads and left the host unreachable until the owner pressed the power button. A persistent offload mitigation with a boot-persistent rollback is prepared in [`proxmox/nic-offload`](../proxmox/nic-offload/README.md), **not deployed**. Evidence is in [todo 3](todo.md). Hold large guest downloads, including resuming Immich, until it is deployed.
+2026-11-02: the `e1000e` hang recurred on the patched kernel during Immich image downloads and left the host unreachable until the owner pressed the power button. With the owner's approval a persistent offload mitigation ([`proxmox/nic-offload`](../proxmox/nic-offload/README.md)) was deployed the same day. It survived a reboot and a short load test with no hang reports; the 24-hour soak is pending, so the fix is unproven. Evidence is in [todo 3](todo.md). VM 120 was left stopped; resuming the Immich image pull doubles as the soak's real workload, so watch the journal during it.
+
+2026-11-02: at the owner's request a [host configuration backup](../proxmox/host-config-backup/README.md) now runs on the VM backup job's schedule (`*-*-1/3 02:30`), keeping 15 archives on the QNAP backup share. One manual run produced a 642 KB archive, with `/etc/pve` and `etc/network/interfaces` listed and the copied cluster database passing `PRAGMA integrity_check`. The first timed run is due 2026-11-04 02:30. A full restore is untested, and failures reach only the journal, not Telegram.
 
 2026-11-02: the owner authorized daily automatic Proxmox host maintenance in the 03:00–04:00 Australia/Sydney window. The 03:30 timer and a guest private-app startup recovery unit are deployed; the first timed run and reboot recovery remain unverified. The updater gives backups priority via the Proxmox backup lock. See [scheduled host maintenance](../proxmox/automatic-maintenance/README.md) for safeguards, limitations and rollback. Canonical guest kernel fixes and the QNAP/router assessment remain outstanding.
 

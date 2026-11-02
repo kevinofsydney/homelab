@@ -5,7 +5,7 @@ Source artifacts for the [e1000e hang mitigation](../../docs/proxmox-nic-recover
 | Command | Effect |
 | --- | --- |
 | `homelab-nic-offload check` | Read-only: prints driver-checked settings, the recorded baseline and unit state |
-| `homelab-nic-offload arm` | Records the baseline, enables the rollback timer and checks it, then enables and applies the candidate. Applying resets the adapter, so expect a brief link interruption |
+| `homelab-nic-offload arm` | Records the baseline, enables the rollback timer and checks it, then enables and applies the candidate. The 2026-11-02 run logged no link drop, but allow for a brief interruption |
 | `homelab-nic-offload ack` | Cancels the rollback. Refuses unless the candidate is active with all three offloads off |
 | `homelab-nic-offload rollback` | Restores the recorded baseline and disables the candidate and the timer. The timer runs this 30 minutes after arming and after each boot until acknowledged |
 
