@@ -26,6 +26,8 @@ The owner authorized automatic PR merging for this project on 2026-10-27: "you c
 
 ## Next useful work
 
+2026-11-03: the Immich VM's 80 GB disk filled with transcoded video (68 GiB), leaving all containers unhealthy. With the owner's approval, encoded video moved to the NAS export ([PR #10](https://github.com/kevinofsydney/homelab/pull/10)); the copy was verified, the SSD copy removed, and Immich restarted healthy with the disk at 12%; the owner confirmed video playback. PostgreSQL, thumbnails and models stay on the SSD. See the [Immich handoff](handoffs/immich-deployment-2026-11-02.md).
+
 2026-11-02: the owner asked for Hermes to monitor and triage Immich. With the owner's approval, the read-only status path, VM 101's enrolment as `tag:hermes` with a grant to that one port, and the `/immich` skill were deployed the same day; Hermes reads the status and nothing else on the tailnet, verified as both `hermes` and root. Kuma alerts are not yet configured (todo 18). See [Immich monitoring](../docs/immich-monitoring.md).
 
 2026-11-02: the Proxmox host kernel was updated for CVE-2026-98432; Ubuntu guests were awaiting vendor fixes and a startup-ordering fix is still needed for one private app. See the [maintenance handoff](handoffs/cve-2026-98432-maintenance-2026-11-02.md).
