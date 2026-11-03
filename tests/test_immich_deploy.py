@@ -22,7 +22,7 @@ class ImmichGateTests(unittest.TestCase):
             gate = root / "scripts/check-mount.sh"
             gate.write_text("#!/bin/sh\nexit " + ("0" if mount_ok else "1") + "\n")
             gate.chmod(0o755)
-            for item in ("postgres", "thumbs", "encoded-video", "model-cache"):
+            for item in ("postgres", "thumbs", "model-cache"):
                 (root / "ssd" / item).mkdir(parents=True)
             (root / "nas").mkdir()
             (root / "nas/library").mkdir()
