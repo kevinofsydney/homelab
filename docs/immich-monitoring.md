@@ -1,6 +1,6 @@
 # Immich monitoring and Hermes triage
 
-**Status: prepared, not deployed.** The code and tests are in the repository. Nothing here has run on the Immich VM, on VM 101, in the tailnet policy or in Uptime Kuma. Deploying it needs the owner's approval and the owner's actions in the Tailscale console. Replace this status line with the evidence when it is applied.
+**Status: deployed 2026-11-02 with the owner's approval, except the Kuma monitors and the optional queue key.** Evidence and deviations are under [Deployment record](#deployment-record-2026-11-02).
 
 ## Goal and design
 
@@ -19,7 +19,7 @@ The queue-count API key is optional, stays on the Immich VM and needs only `queu
 
 **Limits.** A hijacked Hermes could read the snapshot but not photos, accounts or credentials. Kuma runs on the same host, so a whole-host or home-network outage produces no alert. The snapshot doesn't prove that uploads work or that photos are intact.
 
-**Decision status.** Proposed by this change, and takes effect on deployment: enrolling VM 101 in Tailscale as `tag:hermes` supersedes "do not enrol this guest in Tailscale" in the [Hermes plan](hermes-n8n-telegram-plan.md). The [dev VM isolation plan](dev-vm-isolation-plan.md) allows tagged agent guests a specific approved destination.
+**Decision status.** Confirmed by the owner and deployed on 2026-11-02: enrolling VM 101 in Tailscale as `tag:hermes` supersedes "do not enrol this guest in Tailscale" in the [Hermes plan](hermes-n8n-telegram-plan.md). The [dev VM isolation plan](dev-vm-isolation-plan.md) allows tagged agent guests a specific approved destination.
 
 ## Deploy, after approval
 
@@ -108,6 +108,29 @@ Run these from VM 101 as `hermes`, not from Hermes's own report, and record the 
 5. `/immich` in Telegram gives a correct summary.
 6. With the owner's approval, briefly stop one non-essential container: `overall` becomes `degraded`, Kuma alerts, and `/immich` names it. Restart through `deploy-immich.sh --apply`.
 7. Stop the collector timer: `overall` becomes `stale` within about five minutes and Kuma alerts. Start it again.
+
+## Deployment record, 2026-11-02
+
+**How it was applied.** The project-local Ansible in WSL had no SSH key for the guests, so each playbook's steps were applied over SSH as `devops` from the operator's computer instead, with the same files, modes and checks. The egress rules were rendered from `hermes-egress.nft.j2` by Ansible's template module, checked with `nft -c`, and diffed against the live file: the only changes were the two header comment lines and the one exception rule. The previous rules are kept on VM 101 as `/etc/hermes-egress.nft.pre-immich-20261102`.
+
+**Immich VM.** The collector timer and status server are enabled and active. The server listens only on the Tailscale address, port 2284. The first snapshot reported `overall: ok`, all four containers healthy, the NAS mounted from the expected source and Immich 3.3.5. From the operator's computer the status returned 200; the LAN address and other paths were refused or returned 404.
+
+**Tailnet.** The owner saved the policy with the `tag:hermes` grant and its tests; Tailscale accepted it, so the tests passed. VM 101 has no DHCP reservation, and Proxmox reported its address. Its SSH host key was verified against the fingerprint read inside the guest through the Proxmox guest agent, then pinned in ignored `.local`. The `tailscale_client` role refuses Ubuntu 26.04, so Tailscale 1.104.2 (the repo's pinned version) was installed from Tailscale's `resolute` repository, whose signing key matched the pinned checksum. VM 101 enrolled as `hermes-agent` with `tag:hermes`, and `CorpDNS`, `RouteAll`, `RunSSH` all false, no exit node and no advertised routes. Tagged devices have no key expiry.
+
+**Acceptance checks from VM 101.**
+
+| Check | As `hermes` | As root |
+| --- | --- | --- |
+| Status URL | JSON returned | 200 |
+| Immich app port, Immich SSH | Refused by the guest guard | Timed out (tailnet policy) |
+| Home-services SSH and HTTPS, NAS SMB, Titan RDP over the tailnet | Refused by the guest guard | Timed out (tailnet policy) |
+| LAN addresses, including the Proxmox UI | Refused | Refused by the Proxmox firewall |
+
+The exception rule counted packets during the `hermes` test. `hermes chat -q "/immich"` read the status and gave a correct summary, including what the snapshot can't show. From the Uptime Kuma container, both the Immich ping and the status endpoint returned 200.
+
+**Direct LAN path.** `tailscale ping` reached the Immich VM directly over the LAN. The Proxmox firewall rejects new connections from VM 101 to the LAN, but allows replies to the tunnel the Immich VM opened. Only encrypted WireGuard packets use that path, and the tailnet policy still limits what is inside it. TCP to LAN addresses from VM 101 stayed refused.
+
+**Not done.** Kuma monitors and Telegram alerts (owner, web UI). The optional `queue.read` key (owner). Acceptance checks 6 (stop a container) and 7 (stop the collector) were not run; the stale logic is covered by unit tests only. `/immich` hasn't been tapped in Telegram by the owner. Consider a DHCP reservation for VM 101.
 
 ## Roll back
 
