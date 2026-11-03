@@ -12,6 +12,14 @@ The owner authorized a dedicated Immich VM, QNAP share and private access. Site 
 
 - From the operator's computer over Tailscale, `GET /api/server/ping` on port 2283 returned `pong` and `GET /api/server/version` returned 3.3.5. The owner reports creating the administrator account; this was not independently checked. The owner's first mobile app connection attempt failed, and the owner later reported that the mobile app works. The cause of the first failure was not confirmed, and uploads were not independently checked.
 
+## Update 2026-11-03: VM disk full, encoded video moved to the NAS
+
+- **Symptom:** all four containers reported unhealthy, and the status endpoint showed `ssd_low_space` at 100%. The API still answered. PostgreSQL logged "No space left on device", and Docker could not run health checks or record container state.
+- **Cause:** transcoded video under `/srv/immich/encoded-video` reached 68 GiB (72,364,091,861 bytes, 1,569 files), generated within about a day of mobile backup from roughly 130 GB of originals. The 80 GB VM disk had no space left. The NAS export had 5.2 TB free.
+- **Fix, approved by the owner:** [PR #10](https://github.com/kevinofsydney/homelab/pull/10) removed the SSD bind for `/data/encoded-video`, so transcodes live in the NAS library directory. With Immich stopped, `rsync -a` ran as the service identity (the export is root-squashed). Verification: equal file and directory counts, a `rsync -an --itemize-changes` dry run with no differences, and matching SHA-256 for 25 random files. The disk then had 41 MB free and journal vacuuming freed nothing, too little for a safe restart. So the SSD copy was deleted after a recheck and before the restart, a change from the agreed order. The disk went to 12% used.
+- **After restart:** the new Compose file and gate were installed, with the previous versions kept beside them as `*.pre-nas-video-20261103`. The gate passed in plan mode. Docker was restarted to clear stale state, and `homelab-immich.service` started all four containers, which were healthy within 40 seconds. The server's mounts are now `/data` from the NAS and `/data/thumbs` from the SSD; `/data/encoded-video` holds the 1,569 files. The status endpoint reported `overall: ok` with no problems. Video playback in the app was not tested by the agent.
+- **Still worth doing:** consider Immich's transcode policy (Administration > Settings > Video Transcoding), which decides whether every video gets a second copy. That is an owner choice about quality and space.
+
 ## Continue
 
 Test application-level database recovery and NAS-loss behavior. Continue the 24-hour NIC soak; a short clean workload does not prove the mitigation. Existing QNAP shares and Plex were not changed.
