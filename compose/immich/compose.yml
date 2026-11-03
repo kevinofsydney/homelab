@@ -16,10 +16,6 @@ services:
         source: ${IMMICH_LOCAL_ROOT:?Set local SSD path}/thumbs
         target: /data/thumbs
         bind: {create_host_path: false}
-      - type: bind
-        source: ${IMMICH_LOCAL_ROOT}/encoded-video
-        target: /data/encoded-video
-        bind: {create_host_path: false}
       - /etc/localtime:/etc/localtime:ro
     depends_on: [redis, database]
     healthcheck: {disable: false}
