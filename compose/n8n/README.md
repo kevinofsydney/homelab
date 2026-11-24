@@ -1,6 +1,6 @@
 # Self-hosted n8n (planned)
 
-**Status: prepared source, not deployed.** On 2026-11-24 the owner asked to move the cloud n8n workflows to the homelab, after the cloud plan's monthly execution cap became a limit. This README is the deployment plan and runbook. Every step marked **approval** changes running infrastructure, networks, credentials or backups and needs the owner's explicit go-ahead under [`AGENTS.md`](../../AGENTS.md). Nothing here has run yet.
+**Status: VM created and staged; n8n not started.** Live progress is in [Deployment evidence](#deployment-evidence). On 2026-11-24 the owner asked to move the cloud n8n workflows to the homelab, after the cloud plan's monthly execution cap became a limit. This README is the deployment plan and runbook. Every step marked **approval** changes running infrastructure, networks, credentials or backups and needs the owner's explicit go-ahead under [`AGENTS.md`](../../AGENTS.md). Nothing here has run yet.
 
 ## Design
 
@@ -52,6 +52,26 @@ The agent prepares source changes as PRs. The owner runs or approves everything 
 - **Upgrade:** back up first. Read the release notes for migrations, pin the new tag and digest for both services, apply, then check health and one representative workflow. Rolling back after a database migration needs the pre-upgrade backup, not only the old image.
 - **Security updates:** follow n8n's GitHub security advisories. Patch critical issues promptly, even though the instance has no public ingress.
 
-## Not verified
+## Deployment evidence
 
-Everything above. Record dated evidence for each step in this file and in [`agents/context.md`](../../agents/context.md) as it is completed.
+Record dated evidence for each step here and in [`agents/context.md`](../../agents/context.md).
+
+**2026-11-24 (owner authorized the migration and live changes):**
+
+- **Step 1, done.** VM 140 `n8n` was created with `clone-application-vm.sh`, after the plan check passed (2 vCPU, 3072 MiB, 40 GiB, DHCP). The host had 12 GiB available before the clone. It reuses VM 120's operator keys. Autostart is on (`order=5,up=30`), and the VM is now in the 3-day backup job (retention unchanged).
+- **Step 2, done.** The firewall from `n8n.fw.example` was installed as `140.fw` with site values. From inside the guest:
+  - TCP to Proxmox 8006, home-services 22, NAS 443, router 80 and `100.100.100.100:53` was blocked
+  - NAS 2049 was open
+  - `api.telegram.org` and `sheets.googleapis.com` answered over HTTPS
+  - IPv6 was blocked
+
+  Not yet re-tested after a reboot.
+- **Step 3, partly done.** The image is pinned to stable 2.48.8 by digest. On the VM, the image runs as UID 1000, Node v26 has `fetch`, and `n8n --version` reports 2.48.8. Moving to stable 2.49.x before import is still open.
+- **Step 4, done without the backup mount.** The staging roles applied: `application_baseline`, `tailscale_client`, `docker_staged` and `n8n_staged` (`ok=36 changed=16 failed=0`). `qnap_backup_mount` was skipped because the NAS has no export for this VM yet. Docker was then enabled and started.
+- **Step 6, partly done.** `.env` exists (root, 0600) with a generated webhook path. The relay secret was generated on the VM (UID 1000, 0400). Still to fill: the tailnet name, the owner's Telegram ID, the NAS backup source and the bot token.
+- **Waiting on the owner:**
+  - complete the Tailscale login started with `tailscale up --hostname=n8n`
+  - create a QNAP NFS export for the backup share, restricted to this VM
+  - provide the Telegram user ID and a test bot token
+
+**Not yet verified:** firewall and service behaviour after a reboot, n8n start and owner setup, backups, restore, the relay end to end, and every later step.
