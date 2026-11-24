@@ -1,6 +1,6 @@
 # Homelab infrastructure
 
-Reproducible starting point for a single Dell OptiPlex Proxmox host running three Ubuntu guests: a development VM, a home-services VM (Paperless, Uptime Kuma) and a Hermes agent VM (Telegram, n8n, GitHub). VMs are backed up to the QNAP every 3 days. Self-hosted n8n is outside current scope. Nothing in this repository deploys when cloned.
+Reproducible starting point for a single Dell OptiPlex Proxmox host running three Ubuntu guests: a development VM, a home-services VM (Paperless, Uptime Kuma) and a Hermes agent VM (Telegram, n8n, GitHub). VMs are backed up to the QNAP every 3 days. Self-hosted n8n on its own VM is planned (owner request 2026-11-24), not deployed; see [the n8n plan](compose/n8n/README.md). Nothing in this repository deploys when cloned.
 
 **Current status and handoff:** [agents/handoffs/homelab-status-2026-10-28.md](agents/handoffs/homelab-status-2026-10-28.md).
 
@@ -10,7 +10,7 @@ Read [the supplied blueprint](docs/homelab-blueprint.md) with [the first impleme
 
 The initial development VM has been created under explicit operator approval. Read [its bootstrap evidence and remaining gates](docs/development-bootstrap.md) before provisioning; do not recreate existing guests. It is isolated from management addresses by the Proxmox firewall and tailnet policy ([dev VM isolation](docs/dev-vm-isolation-plan.md)).
 
-A separate [home-services VM](docs/application-vm.md) runs Docker and private Paperless; see the [live handoff](agents/handoffs/paperless-deployment.md) for its current state and recovery steps. The [Hermes agent VM](docs/hermes-runbook.md) runs the owner's Telegram coding agent. [Proxmox backups](docs/proxmox-backups.md) cover all three VMs, and [QNAP access](docs/qnap-access.md) explains reaching QTS with a valid certificate. Self-hosted n8n is outside the current scope; inactive n8n files remain for possible future use.
+A separate [home-services VM](docs/application-vm.md) runs Docker and private Paperless; see the [live handoff](agents/handoffs/paperless-deployment.md) for its current state and recovery steps. The [Hermes agent VM](docs/hermes-runbook.md) runs the owner's Telegram coding agent. [Proxmox backups](docs/proxmox-backups.md) cover all three VMs, and [QNAP access](docs/qnap-access.md) explains reaching QTS with a valid certificate. Self-hosted n8n is planned on a dedicated VM with no public ingress; [its plan and runbook](compose/n8n/README.md) list the approval gates.
 
 For any coding agent, read [AGENTS.md](AGENTS.md), the [agent collaboration guide](agents/README.md) and [shared project context](agents/context.md) first. The repository is the durable source of context across tools, sessions and contributors.
 
@@ -38,7 +38,7 @@ See the [topology and resource diagram](docs/homelab-diagram.md) for current all
 - `compose/paperless/`: private application stack, gated on its NAS mount.
 - `compose/uptime-kuma/`: private status dashboard and deployment runbook.
 - [Hermes runbook](docs/hermes-runbook.md): operating the Telegram coding agent on VM 101.
-- `compose/n8n/`: inactive staging files retained for possible future use; self-hosted n8n is outside current scope.
+- `compose/n8n/`: planned private n8n stack with a Telegram long-polling relay; not deployed.
 - `scripts/`: preflight, provisioning, deployment and backup validation.
 - `docs/`: architecture, security, storage, recovery and upstream source notes.
 - `agents/`: permission boundaries and issue-to-PR design.

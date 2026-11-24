@@ -58,4 +58,16 @@ jobs:
           PY
           docker compose --env-file .local/compose-validation.env -f compose/paperless/compose.yml config --quiet
       - name: Validate n8n Compose without starting containers
-        run: docker compose -f compose/n8n/compose.yml config --quiet
+        run: |
+          mkdir -p .local/n8n-secrets
+          printf 'validation-only\n' > .local/n8n-secrets/telegram_bot_token
+          printf 'validation-only\n' > .local/n8n-secrets/relay_shared_secret
+          sed -e 's/REPLACE_TAILSCALE_NAME/n8n.example.invalid/' \
+              -e 's/REPLACE_GENERATED_PATH/0123456789abcdef0123/' \
+              -e 's/REPLACE_OWNER_ID/1001/' \
+              -e "s#^N8N_SECRETS_DIR=.*#N8N_SECRETS_DIR=$PWD/.local/n8n-secrets#" \
+              compose/n8n/.env.example > .local/n8n-validation.env
+          docker compose --project-directory compose/n8n --env-file .local/n8n-validation.env -f compose/n8n/compose.yml config --quiet
+          docker compose -f compose/n8n/compose.yml config --quiet
+      - name: Test the n8n Telegram relay
+        run: node --test compose/n8n/telegram-relay.test.mjs

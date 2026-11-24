@@ -1,30 +1,94 @@
+# Private self-hosted n8n with a Telegram long-polling relay. See README.md before use.
+# Site values come from the ignored .env next to this file (copy .env.example). The defaults
+# below exist only so `docker compose config` can validate the file without one.
 name: n8n
+
+x-hardening: &hardening
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
 services:
   n8n:
-    # n8n stable release 2.44.7, reviewed 2026-10-27; update through a change review.
-    image: docker.io/n8nio/n8n:2.44.7@sha256:942bc274709f27f99f7c6024a785d8e8f75ac06838cabcba448abb8d9127ec7b
-    restart: "no"
-    init: true
+    <<: *hardening
+    # n8n stable release 2.48.8 (multi-arch index digest), pinned 2026-11-24. The cloud instance
+    # runs 2.49.5 on the beta track: before cutover, move to the first stable 2.49.x or later so
+    # imported workflows never use node versions this image lacks (README, step 3).
+    image: docker.io/n8nio/n8n:2.48.8@sha256:e0df076a41076127d5f765e05acb8ba746bddff86442a92269c0f5a7219a7e4b
+    # Loopback only: reached through `tailscale serve` or an SSH tunnel, never the LAN.
     ports:
       - "127.0.0.1:5678:5678"
     environment:
-      GENERIC_TIMEZONE: Australia/Sydney
-      TZ: Australia/Sydney
-      N8N_HOST: localhost
-      N8N_PROTOCOL: http
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-Australia/Sydney}
+      TZ: ${N8N_TIMEZONE:-Australia/Sydney}
+      N8N_HOST: ${N8N_PUBLIC_HOST:-localhost}
+      N8N_PROTOCOL: ${N8N_PUBLIC_PROTOCOL:-http}
       N8N_PORT: '5678'
+      N8N_EDITOR_BASE_URL: ${N8N_PUBLIC_PROTOCOL:-http}://${N8N_PUBLIC_HOST:-localhost}${N8N_PUBLIC_PORT_SUFFIX-:5678}/
+      WEBHOOK_URL: ${N8N_PUBLIC_PROTOCOL:-http}://${N8N_PUBLIC_HOST:-localhost}${N8N_PUBLIC_PORT_SUFFIX-:5678}/
+      N8N_PROXY_HOPS: ${N8N_PROXY_HOPS:-0}
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
       N8N_BLOCK_ENV_ACCESS_IN_NODE: 'true'
       N8N_DIAGNOSTICS_ENABLED: 'false'
       N8N_PERSONALIZATION_ENABLED: 'false'
+      # Nodes that reach the container's shell or filesystem. None of the migrated workflows use them.
+      NODES_EXCLUDE: '["n8n-nodes-base.executeCommand","n8n-nodes-base.ssh","n8n-nodes-base.localFileTrigger","n8n-nodes-base.readWriteFile"]'
+      # Community packages stay off: the one community node in use is replaced by an HTTP Request node.
+      N8N_COMMUNITY_PACKAGES_ENABLED: 'false'
+      # About 4,000 executions a month; keep two weeks of history.
+      EXECUTIONS_DATA_PRUNE: 'true'
+      EXECUTIONS_DATA_MAX_AGE: '336'
+      EXECUTIONS_DATA_PRUNE_MAX_COUNT: '20000'
     volumes:
       - type: bind
         source: /srv/n8n/data
         target: /home/node/.n8n
         bind:
           create_host_path: false
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5678/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    mem_limit: 1536m
+    cpus: 1.5
+
+  telegram-relay:
+    <<: *hardening
+    # Same pinned image, used only for its Node runtime; no extra image to review.
+    image: docker.io/n8nio/n8n:2.48.8@sha256:e0df076a41076127d5f765e05acb8ba746bddff86442a92269c0f5a7219a7e4b
+    entrypoint: ["node", "/relay/telegram-relay.mjs"]
+    read_only: true
+    environment:
+      RELAY_TARGET_URL: http://n8n:5678/webhook/${RELAY_WEBHOOK_PATH:-validation-only-path}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-0}
+      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
+      RELAY_SHARED_SECRET_FILE: /run/secrets/relay_shared_secret
+    secrets:
+      - telegram_bot_token
+      - relay_shared_secret
+    volumes:
+      - type: bind
+        source: ./telegram-relay.mjs
+        target: /relay/telegram-relay.mjs
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      n8n:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.25
+
+secrets:
+  telegram_bot_token:
+    file: ${N8N_SECRETS_DIR:-/opt/homelab/n8n/secrets}/telegram_bot_token
+  relay_shared_secret:
+    file: ${N8N_SECRETS_DIR:-/opt/homelab/n8n/secrets}/relay_shared_secret

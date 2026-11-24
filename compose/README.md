@@ -1,6 +1,6 @@
 # Reusable private application pattern
 
-Paperless, Uptime Kuma and Immich are deployed privately; their runbooks and handoffs distinguish verified behavior from remaining checks. Media stacks remain planned. Self-hosted n8n is outside current scope until the operator requests it. This contract applies to each new stack; it does not activate a service.
+Paperless, Uptime Kuma and Immich are deployed privately; their runbooks and handoffs distinguish verified behavior from remaining checks. Media stacks remain planned. Self-hosted n8n is planned on a dedicated VM (owner request 2026-11-24) and not deployed; see its [plan](n8n/README.md). This contract applies to each new stack; it does not activate a service.
 
 For each `compose/<service>/` directory, provide `compose.yml`, `.env.example` with placeholders, and a runbook covering requirements, data mapping, startup checks, health, backup, isolated restore, upgrade and rollback. Put actual addresses, immutable reviewed images and secrets in ignored configuration; restrict secret-file permissions. Never commit the generated file.
 

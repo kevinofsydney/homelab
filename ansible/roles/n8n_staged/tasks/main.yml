@@ -45,19 +45,62 @@
     owner: '1000'
     group: '1000'
     mode: '0700'
-- name: Stage pinned Compose definition
+- name: Create root-only secrets directory
+  ansible.builtin.file:
+    path: /opt/homelab/n8n/secrets
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)
+- name: Install SQLite client for online backups
+  ansible.builtin.apt:
+    name: sqlite3
+    state: present
+- name: Stage pinned Compose definition, relay, templates and plan-by-default wrappers
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../compose/n8n/compose.yml"
-    dest: /opt/homelab/n8n/compose.yml
+    src: "{{ playbook_dir }}/../../{{ item.src }}"
+    dest: "/opt/homelab/n8n/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: compose/n8n/compose.yml, dest: compose.yml, mode: '0644' }
+    - { src: compose/n8n/telegram-relay.mjs, dest: telegram-relay.mjs, mode: '0644' }
+    - { src: compose/n8n/.env.example, dest: .env.example, mode: '0644' }
+    - { src: scripts/deploy-n8n.sh, dest: deploy-n8n.sh, mode: '0755' }
+    - { src: scripts/backup-n8n.sh, dest: backup-n8n.sh, mode: '0755' }
+    - { src: scripts/check-mount.sh, dest: check-mount.sh, mode: '0755' }
+  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)
+# Staged only. Enabling the timer is a separate, approved step after a restore test (README).
+- name: Stage nightly backup service and timer, left disabled
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.name }}"
     owner: root
     group: root
     mode: '0644'
-  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)
-- name: Stage plan-by-default deployment wrapper
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../scripts/deploy-n8n.sh"
-    dest: /opt/homelab/n8n/deploy-n8n.sh
-    owner: root
-    group: root
-    mode: '0755'
-  when: not ansible_check_mode or n8n_paths.results[2].stat.isdir | default(false)
+    content: "{{ item.content }}"
+  loop:
+    - name: n8n-backup.service
+      content: |
+        [Unit]
+        Description=Nightly n8n backup to the QNAP backup export
+        After=docker.service network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=/opt/homelab/n8n/backup-n8n.sh --apply
+    - name: n8n-backup.timer
+      content: |
+        [Unit]
+        Description=Run the n8n backup nightly
+
+        [Timer]
+        # Clear of the 02:30 VM backup job and the 03:00-04:00 host maintenance window.
+        OnCalendar=*-*-* 01:15:00
+        RandomizedDelaySec=15m
+        Persistent=true
+
+        [Install]
+        WantedBy=timers.target
