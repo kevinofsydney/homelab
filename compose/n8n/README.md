@@ -74,4 +74,6 @@ Record dated evidence for each step here and in [`agents/context.md`](../../agen
   - create a QNAP NFS export for the backup share, restricted to this VM
   - provide the Telegram user ID and a test bot token
 
+**2026-11-24 (later):** step 5, partly done. The owner approved the Tailscale login; the VM is on the tailnet as `n8n`, owned by the owner and untagged. `.env` now holds its MagicDNS name. `tailscale serve --bg --https=443 http://127.0.0.1:5678` is active (tailnet only). From Titan, a request pinned to the VM's tailnet address returned 502, as expected while n8n is stopped. Name lookup on Titan fails because of the open MagicDNS issue (todo 12), so use a hosts-file entry there. Still open in step 5: tagging, the tailnet grant for Hermes, and the NAS export.
+
 **Not yet verified:** firewall and service behaviour after a reboot, n8n start and owner setup, backups, restore, the relay end to end, and every later step.
