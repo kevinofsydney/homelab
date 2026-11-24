@@ -1,7 +1,15 @@
 ---
-- name: Stage private n8n files and local data directory
-  hosts: applications
+# Stages n8n on the dedicated n8n VM (inventory group `automation`). Run with --check --diff
+# first. It installs packages and files only: it does not enrol Tailscale, start Docker or
+# n8n, or enable the backup timer. See compose/n8n/README.md for the approval gates.
+# Earlier staging on the home-services VM is inert and is not reused.
+- name: Prepare the dedicated n8n VM
+  hosts: automation
   become: true
   gather_facts: true
   roles:
+    - application_baseline
+    - tailscale_client
+    - qnap_backup_mount
+    - docker_staged
     - n8n_staged

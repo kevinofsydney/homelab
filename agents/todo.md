@@ -23,6 +23,7 @@ Rules for maintaining this file:
 | 16 | Delete VM 101 snapshot `pre-hermes-sudo-20261028` | It is the rollback point for the sudo change; a lingering snapshot grows and pins old disk state | Yes, owner decides when | 2 min | Keep until Hermes self-administration has run cleanly for a few days |
 | 17 | Owner-side Telegram check of `/repo` and `/sysupgrade` | Both were verified through `getMyCommands` and `hermes chat -q`, not by tapping in Telegram | No | 5 min | Not started |
 | 18 | Finish Immich monitoring: Kuma alerts and remaining checks | No alert exists for an Immich outage yet; Hermes triage itself is deployed | Owner actions in Kuma and Immich; stopping a container needs approval | ~20 min | Status path, tailnet grant and `/immich` deployed 2026-11-02; Kuma monitors, the optional queue key and acceptance checks 6 and 7 remain. See [Immich monitoring](../docs/immich-monitoring.md) |
+| 19 | Self-host n8n on a dedicated VM | The cloud plan's execution cap limits the scheduled workflows; moving keeps them running at no extra cost | Yes: VM, firewall, tailnet policy, NAS export, credentials and start each need approval | 1-2 weeks elapsed, about 4 h of owner time | Source prepared 2026-11-24; nothing deployed. Steps in [the n8n plan](../compose/n8n/README.md) |
 
 ## Detail
 
@@ -95,6 +96,10 @@ The fine-grained token (all repositories, Contents and Pull requests read/write,
 - `/repo` with no argument should show 4 repository buttons plus "Other". Tapping one should clone or update that repository and report back. `/repo <repo>` was verified through `hermes chat -q`: it cloned the repository and wrote the memory line `Current repo: …`.
 - `/sysupgrade` should report pending updates and wait for "apply". It has not been run yet.
 - If the menu does not show them, reopen the chat. `getMyCommands` lists `/repo` first and `/sysupgrade` second.
+
+### 19. Self-hosted n8n
+
+Closes when the cloud workflows run on the homelab VM, a restore from the QNAP backup has been tested with the saved encryption key, and both the Uptime Kuma monitor and the external heartbeat have been shown to alert. Each live step in [the n8n plan](../compose/n8n/README.md) needs the owner's approval. The workflow-side changes (router webhook, Supadata HTTP node, internal API URLs) belong to the workflow repository.
 
 ## Closed
 
