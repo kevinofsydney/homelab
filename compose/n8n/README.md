@@ -1,23 +1,57 @@
-# Private n8n staging stack
+# Self-hosted n8n (planned)
 
-**Outside current scope:** The operator chose to continue using cloud n8n and will raise self-hosting when ready. These files are retained inactive; do not deploy, start, schedule or seek approval for n8n until the operator requests it again.
+**Status: prepared source, not deployed.** On 2026-11-24 the owner asked to move the cloud n8n workflows to the homelab, after the cloud plan's monthly execution cap became a limit. This README is the deployment plan and runbook. Every step marked **approval** changes running infrastructure, networks, credentials or backups and needs the owner's explicit go-ahead under [`AGENTS.md`](../../AGENTS.md). Nothing here has run yet.
 
-This is staged, not running. It uses the [official n8n Docker configuration](https://docs.n8n.io/deploy/host-n8n/install-options/install-with-docker.md) as its baseline, with a verified immutable stable image, SQLite data on the app VM's SSD and no public webhooks. Its loopback-only port is intended for an authenticated SSH tunnel. It does not include the optional n8n Assistant sandbox or a privileged Docker-in-Docker container.
+## Design
 
-The Compose file binds `/srv/n8n/data` to `/home/node/.n8n` with `create_host_path: false`; the staged role requires a local filesystem, a non-symlinked data path and the image's expected numeric UID/GID 1000. n8n normally generates and stores its encryption key in that directory alongside its database. Do not delete, replace or lose that key: encrypted credentials depend on it. The operator deferred QNAP backups; no backup or restore has been verified. Treat loss of the VM/disk as potential loss of the database, workflows, credentials and encryption key.
+| Concern | Decision |
+| --- | --- |
+| Placement | A dedicated VM (next unused ID) cloned from the Ubuntu 24.04 template with `scripts/clone-application-vm.sh`: **2 vCPU, 3 GiB RAM, 40 GiB disk**. Kept apart from Paperless and Immich because it holds Google, model-provider and Telegram credentials. Confirm free host memory first: VMs 100, 101 and 120 have 8 GiB each and VM 130 has 4 GiB. |
+| Inbound | **No public ingress.** Nothing on the internet can reach the VM. Telegram updates arrive through the relay below, using outbound polling only. [Bot protection](../../docs/bot-protection.md) therefore does not apply. |
+| Outbound | Proxmox VM firewall, same model as Hermes: public internet allowed, every private range and IPv6 rejected, with exceptions only for DNS to the router and NFS to the NAS ([`n8n.fw.example`](../../proxmox/firewall/n8n.fw.example)). Inbound is SSH from the operator device only. |
+| Editor, API and MCP | Port 5678 is bound to loopback. It is reached through `tailscale serve` (HTTPS, tailnet only) or an SSH tunnel. Hermes reaches the MCP endpoint through one tailnet grant to this VM's HTTPS port, following the [Immich monitoring](../../docs/immich-monitoring.md) pattern. Turn on two-step login for the n8n owner account. |
+| Telegram | `telegram-relay` long-polls Telegram and posts allowed updates (message and button press, owner user ID only) to a local n8n Webhook node with an `x-relay-secret` header. The router workflow's Telegram Trigger is replaced by that Webhook node and a step that unwraps the request body, so downstream nodes keep their expressions. Delivery is at-least-once. |
+| Google sign-in | The owner's own Google Cloud OAuth client. Redirect URI is `https://<tailscale name>/rest/oauth2-credential/callback`, which is reachable only from the owner's tailnet devices. The client is set to **In production**, so refresh tokens do not expire after 7 days. |
+| Container | Pinned image digest, all capabilities dropped, `no-new-privileges`, environment access from nodes blocked, shell and file nodes excluded, community packages off, 14-day execution pruning, health check, `restart: unless-stopped`. The relay reuses the same image read-only with a 128 MiB limit. |
+| Data | SQLite on the VM's SSD (`/srv/n8n/data`). Load is about 4,000 executions a month, far below where n8n recommends PostgreSQL. |
+| Secrets | The bot token and relay secret are files in `/opt/homelab/n8n/secrets` (UID 1000, mode 0400), passed as Compose secrets. The n8n encryption key is generated on first start in `/srv/n8n/data/config`. **The owner copies it to a password manager that day.** Service credentials are entered by the owner in the n8n UI only. |
+| Backups | `backup-n8n.sh` runs nightly once its timer is enabled. It takes an online SQLite snapshot, runs n8n's workflow export and its encrypted-credential export, and writes checksums to the dedicated QNAP backup export. The encryption key is **never** copied there, so a reader of the share cannot decrypt credentials. The 3-day Proxmox VM backups remain a second layer. |
+| Monitoring | Uptime Kuma checks `/healthz` over the tailnet. The health-sweep workflow also pings an external heartbeat service (outbound), so a full homelab outage still alerts the owner. |
 
-The daemon and socket were left disabled. Only if the operator requests self-hosted n8n again, review the release and fresh deployment plan, including explicit approval for Docker's guest bridge/firewall changes. The retained wrapper checks the existing data directory and filesystem and refuses to start a container if Docker is inactive. It defaults to a plan. The container has no automatic restart in this preparation; the VM's Proxmox autostart is now enabled (2026-10-27) but nothing starts n8n.
+### Resource estimate
 
-Before use, check the running container, `curl -fsS http://127.0.0.1:5678/healthz` locally and confirm port 5678 is not reachable through the guest's LAN address. From an authorized Windows operator computer, open an SSH tunnel to the observed app VM address:
+n8n uses about 300–600 MiB at idle and peaks during transcript and analysis runs. The relay uses under 64 MiB. The Compose limits are 1.5 GiB and 128 MiB, inside a 3 GiB VM. The database should stay under 1 GiB with 14-day pruning.
 
-```powershell
-ssh -L 5678:127.0.0.1:5678 devops@<application-vm-address>
-```
+## Steps
 
-Keep the SSH window open and visit `http://localhost:5678` on that computer. Verify the app VM's SSH host key against the trusted Proxmox console before accepting it. Complete n8n's initial owner setup yourself; do not send account passwords or service credentials to the coding agent. Confirm owner login and a harmless test workflow. The first setup and authenticated application behavior remain untested until then.
+The agent prepares source changes as PRs. The owner runs or approves everything that touches live systems.
 
-The application VM is not a worker isolation boundary: its management-LAN reachability has not been restricted. Do not add unattended workflows, sensitive credentials or production integrations before their access and recovery requirements are reviewed. Public webhooks and ingress require separate review and approval.
+1. **Capacity and VM (approval).** Check free host memory and storage. Run `clone-application-vm.sh` in plan mode with `APP_VM_CORES=2 APP_VM_MEMORY_MIB=3072 APP_VM_DISK_GIB=40`, then with `--apply`. Record the VM ID, address and host key in ignored `config/site.json` and `.local/known_hosts`.
+2. **Firewall (approval).** Fill `n8n.fw.example` from site inventory and install it as the VM's firewall file. From inside the guest, verify that the router, NAS (except 2049), Proxmox, other VMs, the Tailscale CGNAT range and IPv6 are unreachable, and that public HTTPS works. Repeat after a reboot.
+3. **Release review.** The stack is pinned to stable 2.48.8. The cloud instance runs 2.49.5 on the beta track, so before importing production workflows, move to the first stable 2.49.x or later. Read its release notes and security advisories, pin its tag and digest together in `compose.yml` for both services, and check that the image still runs as UID 1000 and ships Node's `fetch`.
+4. **Stage (approval).** Add the VM to ignored `hosts.yml` under `automation`, then run `ansible-playbook ansible/playbooks/stage-n8n.yml --check --diff`, then apply. This installs packages and files only.
+5. **Tailscale and backup mount (approval).** The owner enrols the VM and tags it. Update tailnet policy: owner devices may reach the VM, and Hermes may reach its HTTPS port only. Enable `tailscale serve` to `http://127.0.0.1:5678`. Create the QNAP backup export for this VM's address and verify the mount with `check-mount.sh`.
+6. **Configure.** The owner copies `.env.example` to `.env` (root, 0600) and fills it in. They create the secret files with `openssl rand -hex 32` for the relay secret, and use a **separate test bot's** token until cutover.
+7. **Start (approval).** Run `deploy-n8n.sh` in plan mode, then `--apply`. Check that `docker compose ps` is healthy, that `curl -fsS http://127.0.0.1:5678/healthz` succeeds on the VM, and that port 5678 is closed from the LAN.
+8. **Owner setup.** Create the owner account, turn on two-step login, and save the encryption key to the password manager. Then create the n8n API key and MCP access, and enter each service credential.
+9. **Backup and restore test (approval).** Run `backup-n8n.sh --apply` once. Restore it into a throwaway VM or container using the saved key, and confirm workflows, credentials and data tables. Only then enable the backup timer with `systemctl enable --now n8n-backup.timer`.
+10. **Migrate and test.** Import workflows and data tables, rebind credentials and IDs, and test against the test bot. The workflow-side changes are listed below.
+11. **Cutover (approval).** Pick a week with no event. Unpublish the cloud schedules and router, re-copy rows that changed in the cloud data tables, and switch the relay to the production bot token. The relay clears the cloud webhook on start. Publish the workflows in dependency order and watch the first full cycle. Keep the cloud account as a fallback until its plan ends.
+12. **Monitoring.** Add the Uptime Kuma monitor and the external heartbeat check. Test that both alert.
 
-## Upgrade and recovery
+### Workflow-side changes (separate repository)
 
-Review upstream release notes and pin a new tag and digest together. Before upgrading or enabling real workflows, take an application-consistent copy of the SQLite database and encryption key to an approved backup destination, test an isolated restore, and record rollback steps. A database migration can make downgrading the image alone unsafe. Until a restore has been tested, report recovery as unverified.
+- Router: replace the Telegram Trigger with a Webhook node (POST, the `.env` path, header-auth credential for `x-relay-secret`), followed by a step that outputs the request body. The relay already filters senders, but keep the router's own owner check.
+- Replace the single community Supadata node with an HTTP Request node, so community packages can stay disabled.
+- Workflows that call n8n's own API or MCP use `http://localhost:5678` from inside the container. Execution links sent to Telegram use the Tailscale editor address.
+- The health sweep pings the external heartbeat URL, which is stored as a credential, not in workflow code.
+
+## Recovery and upgrades
+
+- **Restore:** a fresh VM from steps 1–7, the latest `COMPLETE` backup, and the encryption key from the password manager. Stop n8n, gunzip `database.sqlite` into `/srv/n8n/data` (owner 1000), and write the key into `config`. Start n8n and check workflows, credentials and data tables before re-enabling schedules. If the key is lost, the database restores but every credential has to be entered again.
+- **Upgrade:** back up first. Read the release notes for migrations, pin the new tag and digest for both services, apply, then check health and one representative workflow. Rolling back after a database migration needs the pre-upgrade backup, not only the old image.
+- **Security updates:** follow n8n's GitHub security advisories. Patch critical issues promptly, even though the instance has no public ingress.
+
+## Not verified
+
+Everything above. Record dated evidence for each step in this file and in [`agents/context.md`](../../agents/context.md) as it is completed.

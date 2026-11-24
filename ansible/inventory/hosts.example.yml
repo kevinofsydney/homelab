@@ -24,6 +24,15 @@ all:
           ansible_user: devops
           ansible_ssh_private_key_file: REPLACE_ABSOLUTE_PRIVATE_KEY_PATH
           immich_status_bind_ip: REPLACE_IMMICH_TAILSCALE_IP
+    automation:
+      hosts:
+        n8n_vm:
+          ansible_host: REPLACE_N8N_VM_IP
+          ansible_user: devops
+          ansible_ssh_private_key_file: REPLACE_ABSOLUTE_PRIVATE_KEY_PATH
+          operator_ssh_public_keys: []
+          qnap_backup_server: REPLACE_NAS_HOST
+          qnap_backup_export: REPLACE_NFS_EXPORT
     hermes_agents:
       hosts:
         hermes_agent:
